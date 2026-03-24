@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="form-page">
+    <div class="form-page-container wide">
+
+        <div class="form-page-header">
+            <p class="section-eyebrow">Platform Configuration — Step 2</p>
+            <h1 class="form-page-title">Define Fields &amp; Formulas</h1>
+            <p class="form-page-sub">
+                Configure the logic and parameters for
+                <span style="color: var(--ac-blue-light);">{{ calc.title }}</span>.
+            </p>
+        </div>
+
+        <form method="POST" action="{{ url_for('setup_calculator', calc_id=calc.id) }}" class="setup-form">
+
+            <!-- INPUT FIELDS -->
+            {% if config.num_inputs > 0 %}
+            <div class="setup-section">
+                <div class="setup-section-header">
+                    <span class="setup-section-icon"><i data-lucide="download"></i></span>
+                    <h2>Input Variables
+                        <span class="field-count-badge">{{ config.num_inputs }}</span>
+                    </h2>
+                </div>
+                <p class="setup-section-desc">
+                    Assign clear, unique labels to each input. These will be used as variable names in your formulas.
+                </p>
+                <div class="fields-grid">
+                    {% for i in range(config.num_inputs) %}
+                    <div class="field-item">
+                        <label class="form-label">Input {{ i + 1 }} Label</label>
+                        <input type="text" name="input_label_{{ i }}" class="form-input"
+                            placeholder="e.g. distance, load, shaft_dia" required maxlength="50">
+                        <span class="form-hint">Use underscores instead of spaces. Labels are case-sensitive.</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- CONSTANT FIELDS -->
+            {% if config.num_constants > 0 %}
+            <div class="setup-section">
+                <div class="setup-section-header">
+                    <span class="setup-section-icon"><i data-lucide="lock"></i></span>
+                    <h2>System Constants
+                        <span class="field-count-badge">{{ config.num_constants }}</span>
+                    </h2>
+                </div>
+                <p class="setup-section-desc">
+                    Define fixed numeric values (e.g., gravity, material constants) that remain static for all
+                    calculations.
+                </p>
+                <div class="fields-grid two-col">
+                    {% for i in range(config.num_constants) %}
+                    <div class="field-item const-item">
+                        <label class="form-label">Constant {{ i + 1 }} Label</label>
+                        <input type="text" name="const_label_{{ i }}" class="form-input"
+                            placeholder="e.g. gra, pi_factor, Ks" required maxlength="50">
+                        <label class="form-label" style="margin-top: 1rem;">Value</label>
+                        <input type="number" step="any" name="const_value_{{ i }}" class="form-input"
+                            placeholder="e.g. 3.14, 1.38, 9.81" required>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- DROPDOWN FIELDS -->
+            {% if config.num_dropdowns > 0 %}
+            <div class="setup-section">
+                <div class="setup-section-header">
+                    <span class="setup-section-icon"><i data-lucide="list"></i></span>
+                    <h2>Selection Menus
+                        <span class="field-count-badge">{{ config.num_dropdowns }}</span>
+                    </h2>
+                </div>
+                <p class="setup-section-desc">
+                    Define labels and comma-separated options for user selection.
+                </p>
+                <div class="fields-grid">
+                    {% for i in range(config.num_dropdowns) %}
+                    <div class="field-item">
+                        <label class="form-label">Menu {{ i + 1 }} Label</label>
+                        <input type="text" name="dropdown_label_{{ i }}" class="form-input"
+                            placeholder="e.g. Load Type, Material Grade" required maxlength="80">
+                        <label class="form-label" style="margin-top: 1rem;">Available Options (comma-separated)</label>
+                        <input type="text" name="dropdown_items_{{ i }}" class="form-input"
+                            placeholder="e.g. Sudden Load, Gradual Load, Impact Load" required>
+                        <span class="form-hint">Each entry becomes a selectable item in the tool.</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- OUTPUT / FORMULA FIELDS -->
+            {% if config.num_outputs > 0 %}
+            <div class="setup-section">
+                <div class="setup-section-header">
+                    <span class="setup-section-icon"><i data-lucide="upload"></i></span>
+                    <h2>Output Variables &amp; Formulas
+                        <span class="field-count-badge">{{ config.num_outputs }}</span>
+                    </h2>
+                </div>
+                <p class="setup-section-desc">
+                    Write mathematical expressions for your outputs using the variable labels defined above.
+                </p>
+
+                <div class="formula-tip-box">
+                    <p style="font-weight: 700; margin-bottom: 0.5rem;"><i data-lucide="lightbulb"
+                            style="width: 16px; height: 16px; vertical-align: middle;"></i> Syntactic Guide:</p>
+                    <p>Use labels directly: <code>(distance * load) + constants</code></p>
+                    <p>Supported functions: <code>sqrt()</code>, <code>sin()</code>, <code>cos()</code>,
+                        <code>log()</code>, <code>pow(x,y)</code>, <code>abs()</code>, <code>pi</code></p>
+                </div>
+
+                <div class="fields-grid">
+                    {% for i in range(config.num_outputs) %}
+                    <div class="field-item output-item">
+                        <label class="form-label">Output {{ i + 1 }} Label</label>
+                        <input type="text" name="output_label_{{ i }}" class="form-input"
+                            placeholder="e.g. Shaft Diameter, Safety Factor" required maxlength="80">
+                        <label class="form-label" style="margin-top: 1rem;">Formula Logic</label>
+                        <input type="text" name="output_formula_{{ i }}" class="form-input mono"
+                            placeholder="e.g. (distance * load) + gra"
+                            style="font-family: monospace; letter-spacing: 0.5px;" required>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="form-actions">
+                <a href="{{ url_for('index') }}" class="btn-ghost">Back to Home</a>
+                <button type="submit" class="btn-primary lg">
+                    Finalize Tool <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
+
+        </form>
+    </div>
+</section>
+{% endblock %}

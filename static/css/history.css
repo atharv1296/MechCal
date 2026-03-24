@@ -1,0 +1,140 @@
+
+.history-page {
+  padding: 6rem 0 10rem;
+  margin: 2.5rem;
+}
+
+/* ── TABLE WRAPPER ───────────────────────────────────────── */
+.history-table-wrap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-top: 4rem;
+  box-shadow: var(--shadow-xl);
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.history-table th {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1.5rem 2rem;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border);
+}
+
+.history-table td {
+  padding: 1.75rem 2rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  font-size: 0.95rem;
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}
+
+.history-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ── DATA STYLES ─────────────────────────────────────────── */
+.hist-id {
+  color: var(--text-muted);
+  font-family: monospace;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.hist-calc a {
+  font-weight: 700;
+  color: var(--ac-blue-light);
+  font-size: 1.1rem;
+}
+
+.hist-calc a:hover {
+  text-decoration: underline;
+  color: white;
+}
+
+.data-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  max-width: 450px;
+}
+
+.data-pill {
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.input-pill {
+  background: rgba(148, 163, 184, 0.08);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.output-pill {
+  background: rgba(0, 115, 230, 0.12);
+  color: var(--ac-blue-light);
+  border: 1px solid rgba(0, 115, 230, 0.2);
+}
+
+.hist-time {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* ── EMPTY STATE ─────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 8rem 2rem;
+  background: var(--bg-surface);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  margin-top: 4rem;
+}
+
+.empty-icon {
+  margin-bottom: 2rem;
+  color: var(--text-muted);
+  opacity: 0.3;
+}
+
+.empty-state h3 {
+  font-size: 2rem;
+  margin-bottom: 1.25rem;
+  font-family: var(--font-heading);
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  margin-bottom: 3rem;
+  font-size: 1.15rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 1200px) {
+  .history-table th, .history-table td { padding: 1.25rem 1.5rem; }
+}
+
+@media (max-width: 992px) {
+  .history-table-wrap { overflow-x: auto; }
+  .history-table { min-width: 1000px; }
+}

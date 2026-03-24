@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}{{ calc.title }} — Atlas Copco{% endblock %}
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calculator.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="calc-page">
+    <div class="calc-page-container">
+
+        <!-- Page Header -->
+        <div class="calc-page-header">
+            <div class="calc-breadcrumb">
+                <a href="{{ url_for('index') }}">Home</a>
+                <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+                <span>{{ calc.title }}</span>
+            </div>
+            <h1 class="calc-main-title">{{ calc.title }}</h1>
+            <p class="calc-subtitle">Configure parameters and compute precise engineering results.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('use_calculator', calc_id=calc.id) }}" class="calc-form">
+            <div class="calc-grid">
+
+                <!-- LEFT PANEL: Inputs -->
+                <div class="calc-panel inputs-panel">
+
+                    {% if config.get('inputs') %}
+                    <div class="panel-section">
+                        <h2 class="panel-heading">
+                            <i data-lucide="settings-2"></i> Input Parameters
+                        </h2>
+                        {% for i, inp in enumerate(config['inputs']) %}
+                        <div class="calc-field">
+                            <label class="calc-label" for="input_{{ i }}">
+                                {{ inp['label'] }}
+                            </label>
+                            <div class="input-wrap">
+                                <input type="number" step="any"
+                                       name="input_{{ i }}"
+                                       id="input_{{ i }}"
+                                       class="calc-input"
+                                       value="{{ form_vals.get('input_' ~ i, '') }}"
+                                       placeholder="Enter {{ inp['label'] }}"
+                                       required>
+                                <span class="input-unit">—</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if config.get('constants') %}
+                    <div class="panel-section constants-panel-section">
+                        <h2 class="panel-heading">
+                            <i data-lucide="lock"></i> System Constants
+                        </h2>
+                        <div class="constants-table">
+                            {% for c in config['constants'] %}
+                            <div class="const-row">
+                                <span class="const-name">{{ c['label'] }}</span>
+                                <span class="const-val">{{ c['value'] }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if config.get('dropdowns') %}
+                    <div class="panel-section">
+                        <h2 class="panel-heading">
+                            <i data-lucide="list"></i> Selection Fields
+                        </h2>
+                        {% for i, dd in enumerate(config['dropdowns']) %}
+                        <div class="calc-field">
+                            <label class="calc-label" for="dropdown_{{ i }}">{{ dd['label'] }}</label>
+                            <select name="dropdown_{{ i }}" id="dropdown_{{ i }}" class="calc-select">
+                                <option value="">— Select {{ dd['label'] }} —</option>
+                                {% for item in dd['items'] %}
+                                <option value="{{ item }}">{{ item }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="calc-btn-row">
+                        <button type="submit" class="btn-calculate">
+                            <i data-lucide="zap"></i>
+                            Compute Results
+                        </button>
+                        <button type="reset" class="btn-reset">Reset</button>
+                    </div>
+                </div>
+
+                <!-- RIGHT PANEL: Outputs -->
+                <div class="calc-panel outputs-panel">
+                    <h2 class="panel-heading">
+                        <i data-lucide="bar-chart-3"></i> Computation Results
+                    </h2>
+
+                    {% if results %}
+                        {% for r in results %}
+                        <div class="result-card {% if r.error %}result-error{% else %}result-ok{% endif %}">
+                            <div class="result-label">{{ r.label }}</div>
+                            {% if r.error %}
+                                <div class="result-value error-val" style="color: #f87171; font-size: 1.2rem;">
+                                    <i data-lucide="alert-circle" style="width: 20px; vertical-align: middle;"></i> Error in Formula
+                                </div>
+                                <div class="result-formula error-msg">{{ r.error }}</div>
+                            {% else %}
+                                <div class="result-value">{{ r.value }}</div>
+                                <div class="result-formula">Logic: <code>{{ r.formula }}</code></div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+
+                        <div class="result-timestamp">
+                            <i data-lucide="check-circle-2" style="width: 14px; height: 14px; vertical-align: middle;"></i> Verified at {{ now }}
+                        </div>
+
+                    {% else %}
+                        <!-- Placeholder output slots -->
+                        {% if config.get('outputs') %}
+                            {% for out in config['outputs'] %}
+                            <div class="result-card result-pending" style="opacity: 0.5;">
+                                <div class="result-label">{{ out['label'] }}</div>
+                                <div class="result-value pending-val">—</div>
+                                <div class="result-formula">Formula: <code>{{ out['formula'] }}</code></div>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="results-placeholder">
+                            <i data-lucide="play-circle" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.3;"></i>
+                            <p>Ready to calculate. Provide inputs and execute.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </form>
+
+    </div>
+</section>
+{% endblock %}

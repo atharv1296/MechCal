@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO ───────────────────────────────────────────────── -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-text">
+            <p class="hero-eyebrow">Atlas Copco Engineering Suite</p>
+            <h1 class="hero-heading">
+                Precision<br>
+                <span style="color: var(--ac-blue-light);">Calculators</span>
+            </h1>
+            <p class="hero-sub">
+                Empowering Atlas Copco engineers with dynamic, formula-driven computation tools.
+                Build, share, and track critical engineering analysis in one professional platform.
+            </p>
+            <div class="hero-actions">
+                <a href="{{ url_for('create_form') }}" class="btn-primary">
+                    <i data-lucide="plus-circle" style="width: 20px; height: 20px;"></i> Create New Form
+                </a>
+                <a href="{{ url_for('about') }}" class="btn-ghost">Learn More</a>
+            </div>
+        </div>
+
+        <div class="hero-stats">
+            <div class="stat-card">
+                <span class="stat-num">{{ calculators|length }}</span>
+                <span class="stat-label">Active Tools</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-num">∞</span>
+                <span class="stat-label">Scalability</span>
+            </div>
+            <div class="stat-card" style="grid-column: span 2;">
+                <span class="stat-num">ISO-9001</span>
+                <span class="stat-label">Engineering Standards Compliant</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── FEATURES ───────────────────────────────────────────── -->
+<section class="features-section">
+    <div class="section-container">
+        <div class="header-center">
+            <p class="section-eyebrow">Enterprise Capabilities</p>
+            <h2 class="section-heading">Engineered for Reliability</h2>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i data-lucide="layout"></i>
+                </div>
+                <h3>Dynamic Generation</h3>
+                <p>Define custom input, output, and constant fields tailored to specific mechanical engineering
+                    requirements.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i data-lucide="variable"></i>
+                </div>
+                <h3>Advanced Formulas</h3>
+                <p>Supports full mathematical syntax including trigonometric, logarithmic, and exponential functions.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i data-lucide="history"></i>
+                </div>
+                <h3>Calculation Audit</h3>
+                <p>Maintain a complete history of runs for audit trails, comparison, and verification of engineering
+                    results.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i data-lucide="share-2"></i>
+                </div>
+                <h3>Team Ready</h3>
+                <p>Standardized tools that can be shared across departments to ensure consistency in engineering
+                    calculations.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── SAVED CALCULATORS ───────────────────────────────────── -->
+{% if calculators %}
+<section class="calcs-section">
+    <div class="section-container">
+        <div class="section-header-row">
+            <div>
+                <p class="section-eyebrow">Tool Library</p>
+                <h2 class="section-heading">Ready-to-Use Tools</h2>
+            </div>
+            <a href="{{ url_for('create_form') }}" class="btn-primary"
+                style="padding: 0.6rem 1.25rem; font-size: 0.9rem;">
+                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> New Tool
+            </a>
+        </div>
+
+        <div class="calc-cards-grid">
+            {% for calc in calculators %}
+            <div class="calc-card">
+                <div class="calc-card-top">
+                    <div class="calc-card-icon">
+                        <i data-lucide="calculator"></i>
+                    </div>
+                    <div class="calc-card-meta">
+                        <span>{{ calc.created_at.strftime('%d %b %Y') }}</span>
+                    </div>
+                </div>
+                <h3 class="calc-card-title">{{ calc.title }}</h3>
+                <div class="calc-card-actions">
+                    <a href="{{ url_for('use_calculator', calc_id=calc.id) }}" class="btn-use">Launch Tool</a>
+                    <form method="POST" action="{{ url_for('delete_calculator', calc_id=calc.id) }}"
+                        onsubmit="return confirm('Archive this engineering tool?');" style="display:inline;">
+                        <button type="submit" class="btn-delete" title="Delete">
+                            <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}

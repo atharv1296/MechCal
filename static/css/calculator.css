@@ -1,0 +1,251 @@
+/* ═══════════════════════════════════════════════════════════
+   ATLAS COPCO ENGINEERING CALCULATOR — CALCULATOR PAGE
+   ═══════════════════════════════════════════════════════════ */
+
+.calc-page {
+  padding: 4rem 0 8rem;
+  background: var(--bg-page);
+}
+
+.calc-page-container {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.calc-page-header {
+  margin-bottom: 4rem;
+}
+
+.calc-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.calc-breadcrumb a:hover {
+  color: var(--ac-blue-light);
+}
+
+.calc-main-title {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.calc-subtitle {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+/* ── FORM & GRID ────────────────────────────────────────── */
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.calc-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+}
+
+.panel-section {
+  margin-bottom: 3rem;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-heading i {
+  color: var(--ac-blue-light);
+}
+
+/* ── FIELDS ─────────────────────────────────────────────── */
+.calc-field {
+  margin-bottom: 1.75rem;
+}
+
+.calc-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.calc-input, .calc-select {
+  width: 100%;
+  background: #0f172a; /* Darker background for inputs */
+  border: 1px solid var(--border);
+  color: white;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.calc-input:focus, .calc-select:focus {
+  outline: none;
+  border-color: var(--ac-blue-light);
+  box-shadow: 0 0 0 3px rgba(0, 115, 230, 0.15);
+}
+
+.input-unit {
+  position: absolute;
+  right: 1rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ── CONSTANTS TABLE ────────────────────────────────────── */
+.constants-table {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.const-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.const-row:last-child { border-bottom: none; }
+
+.const-name { font-weight: 600; color: var(--text-muted); }
+.const-val { font-family: monospace; font-size: 1.1rem; color: var(--ac-blue-light); }
+
+/* ── ACTIONS ────────────────────────────────────────────── */
+.calc-btn-row {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn-calculate {
+  flex: 2;
+  background: var(--ac-blue);
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.btn-calculate:hover {
+  background: var(--ac-blue-light);
+  transform: translateY(-2px);
+}
+
+.btn-reset {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+}
+
+.btn-reset:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+/* ── RESULTS PANEL ───────────────────────────────────────── */
+.outputs-panel {
+  background: #111827; /* Darker than the input panel */
+  border-color: var(--ac-blue);
+}
+
+.result-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.result-ok {
+  border-left: 4px solid var(--ac-blue-light);
+}
+
+.result-error {
+  border-left: 4px solid #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.result-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.result-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  font-family: var(--font-heading);
+  margin-bottom: 0.5rem;
+}
+
+.result-formula {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.result-formula code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  color: var(--ac-blue-light);
+}
+
+.result-timestamp {
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2rem;
+}
+
+.results-placeholder {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 4rem 2rem;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+}
+
+@media (max-width: 992px) {
+  .calc-grid { grid-template-columns: 1fr; }
+}

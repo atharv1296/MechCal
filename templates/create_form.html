@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="form-page">
+    <div class="form-page-container">
+
+        <div class="form-page-header">
+            <p class="section-eyebrow">Platform Configuration — Step 1</p>
+            <h1 class="form-page-title">Initialize New Tool</h1>
+            <p class="form-page-sub">Define the functional structure of your engineering calculator.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('create_form') }}" class="create-form" id="createForm">
+
+            <!-- Title -->
+            <div class="form-section">
+                <label class="form-label">Calculator Workspace Title <span class="required">*</span></label>
+                <input type="text" name="title" class="form-input" required
+                    placeholder="e.g. Shaft Diameter Calculation, Torque Analysis…" maxlength="150">
+                <span class="form-hint">This identifier will be used across the platform and in calculation
+                    history.</span>
+            </div>
+
+            <!-- Field counts row -->
+            <div class="counts-grid">
+
+                <div class="count-card">
+                    <div class="count-icon"><i data-lucide="download"></i></div>
+                    <label class="form-label">Input Variables</label>
+                    <div class="counter-control">
+                        <button type="button" class="counter-btn" onclick="changeCount('num_inputs', -1)">−</button>
+                        <input type="number" name="num_inputs" id="num_inputs" value="1" min="1" max="20"
+                            class="counter-input" readonly>
+                        <button type="button" class="counter-btn" onclick="changeCount('num_inputs', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="count-card">
+                    <div class="count-icon"><i data-lucide="upload"></i></div>
+                    <label class="form-label">Calculated Outputs</label>
+                    <div class="counter-control">
+                        <button type="button" class="counter-btn" onclick="changeCount('num_outputs', -1)">−</button>
+                        <input type="number" name="num_outputs" id="num_outputs" value="1" min="1" max="20"
+                            class="counter-input" readonly>
+                        <button type="button" class="counter-btn" onclick="changeCount('num_outputs', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="count-card">
+                    <div class="count-icon"><i data-lucide="lock"></i></div>
+                    <label class="form-label">System Constants</label>
+                    <div class="counter-control">
+                        <button type="button" class="counter-btn" onclick="changeCount('num_constants', -1)">−</button>
+                        <input type="number" name="num_constants" id="num_constants" value="0" min="0" max="20"
+                            class="counter-input" readonly>
+                        <button type="button" class="counter-btn" onclick="changeCount('num_constants', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="count-card">
+                    <div class="count-icon"><i data-lucide="list"></i></div>
+                    <label class="form-label">Selection Menus</label>
+                    <div class="counter-control">
+                        <button type="button" class="counter-btn" onclick="changeCount('num_dropdowns', -1)">−</button>
+                        <input type="number" name="num_dropdowns" id="num_dropdowns" value="0" min="0" max="10"
+                            class="counter-input" readonly>
+                        <button type="button" class="counter-btn" onclick="changeCount('num_dropdowns', 1)">+</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('index') }}" class="btn-ghost">Discard</a>
+                <button type="submit" class="btn-primary lg">
+                    Step 2: Field Details <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<script>
+    function changeCount(id, delta) {
+        const input = document.getElementById(id);
+        const min = parseInt(input.getAttribute('min'));
+        const max = parseInt(input.getAttribute('max'));
+        let val = parseInt(input.value) + delta;
+        if (val < min) val = min;
+        if (val > max) val = max;
+        input.value = val;
+    }
+</script>
+{% endblock %}

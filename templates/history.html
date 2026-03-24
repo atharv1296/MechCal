@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="history-page">
+    <div class="section-container">
+        <p class="section-eyebrow">Audit Trail</p>
+        <h1 class="section-heading">Calculation Log</h1>
+        <p class="section-sub">Immutable record of all engineering computations performed on this platform.</p>
+
+        {% if results %}
+        <div class="history-table-wrap">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th><i data-lucide="hash" style="width: 14px;"></i></th>
+                        <th>Engineering Tool</th>
+                        <th>Input Data</th>
+                        <th>Computed Results</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in results %}
+                    <tr>
+                        <td class="hist-id">{{ r.id }}</td>
+                        <td class="hist-calc">
+                            <a href="{{ url_for('use_calculator', calc_id=r.calculator_id) }}">
+                                {{ r.calculator.title }}
+                            </a>
+                        </td>
+                        <td class="hist-data">
+                            <div class="data-pills">
+                                {% set inp = r.inputs | from_json %}
+                                {% for k, v in inp.items() %}
+                                <span class="data-pill input-pill">{{ k }}: {{ v }}</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="hist-data">
+                            <div class="data-pills">
+                                {% set out = r.outputs | from_json %}
+                                {% for k, v in out.items() %}
+                                <span class="data-pill output-pill">{{ k }}: {{ v }}</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="hist-time">
+                            <i data-lucide="clock"
+                                style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></i>
+                            {{ r.calculated_at.strftime('%d %b %Y, %H:%M') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i data-lucide="folder-search" style="width: 64px; height: 64px;"></i>
+            </div>
+            <h3>Archive is Empty</h3>
+            <p>No calculations have been logged yet. Launch a tool to generate data.</p>
+            <a href="{{ url_for('index') }}" class="btn-primary">
+                Explore Engineering Tools
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

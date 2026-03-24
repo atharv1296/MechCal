@@ -1,0 +1,214 @@
+
+.form-page {
+  padding: 4rem 0 8rem;
+}
+
+.form-page-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.form-page-container.wide {
+  max-width: 1000px;
+}
+
+.form-page-header {
+  margin-bottom: 4rem;
+  text-align: center;
+}
+
+.form-page-title {
+  font-size: 2.5rem;
+  margin-top: 0.5rem;
+}
+
+.form-page-sub {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  margin-top: 1rem;
+}
+
+/* ── FORM COMPONENTS ────────────────────────────────────── */
+.form-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 2.5rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 2rem;
+}
+
+.form-label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.form-input {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid var(--border);
+  color: white;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--ac-blue-light);
+  box-shadow: 0 0 0 3px rgba(0, 115, 230, 0.1);
+}
+
+.form-hint {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+.required { color: #f87171; }
+
+/* ── COUNTER CONTROLS ────────────────────────────────────── */
+.counts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.count-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.count-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(0, 115, 230, 0.1);
+  color: var(--ac-blue-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+}
+
+.counter-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.counter-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: white;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.counter-btn:hover { background: var(--ac-blue); border-color: var(--ac-blue); }
+
+.counter-input {
+  width: 60px;
+  text-align: center;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+}
+
+/* ── SETUP SECTIONS ──────────────────────────────────────── */
+.setup-section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 3rem;
+  margin-bottom: 3rem;
+}
+
+.setup-section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.setup-section-icon {
+  color: var(--ac-blue-light);
+}
+
+.field-count-badge {
+  background: rgba(0, 115, 230, 0.1);
+  color: var(--ac-blue-light);
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.setup-section-desc {
+  color: var(--text-muted);
+  margin-bottom: 2.5rem;
+}
+
+.fields-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+.fields-grid.two-col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.field-item {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.formula-tip-box {
+  background: rgba(0, 115, 230, 0.05);
+  border-left: 4px solid var(--ac-blue-light);
+  padding: 1.5rem;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 2.5rem;
+  font-size: 0.95rem;
+}
+
+/* ── ACTIONS ────────────────────────────────────────────── */
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 4rem;
+}
+
+.btn-primary.lg {
+  padding: 1rem 3rem;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .counts-grid, .fields-grid.two-col { grid-template-columns: 1fr; }
+}
