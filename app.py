@@ -137,9 +137,7 @@ MATH_NAMESPACE = {
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'atlas_copco_secret_2024')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///calculators.db')
-if app.config['SQLALCHEMY_DATABASE_URI'].startswith("postgres://"):
-    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///calculators.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ─── Image Upload Config ──────────────────────────────────────────────────────
