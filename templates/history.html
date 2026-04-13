@@ -1,21 +1,32 @@
 {% extends "base.html" %}
+{% block title %}Calculation Log — Atlas Copco Engineering Suite{% endblock %}
 {% block page_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
 {% endblock %}
 
 {% block content %}
-<section class="history-page">
-    <div class="section-container">
-        <p class="section-eyebrow">Audit Trail</p>
-        <h1 class="section-heading">Calculation Log</h1>
-        <p class="section-sub">Immutable record of all engineering computations performed on this platform.</p>
+<div class="history-page">
+
+    <!-- ── TEAL BANNER ──────────────────────────────────── -->
+    <div class="history-banner">
+        <div class="history-banner-inner">
+            <span class="eyebrow">Audit Trail</span>
+            <h1>Calculation Log</h1>
+            <p class="page-sub">
+                Immutable record of all engineering computations performed on this platform.
+            </p>
+        </div>
+    </div>
+
+    <!-- ── TABLE / EMPTY ───────────────────────────────── -->
+    <div class="history-body">
 
         {% if results %}
         <div class="history-table-wrap">
             <table class="history-table">
                 <thead>
                     <tr>
-                        <th><i data-lucide="hash" style="width: 14px;"></i></th>
+                        <th><i data-lucide="hash" style="width:12px;"></i></th>
                         <th>Engineering Tool</th>
                         <th>Input Data</th>
                         <th>Computed Results</th>
@@ -25,7 +36,7 @@
                 <tbody>
                     {% for r in results %}
                     <tr>
-                        <td class="hist-id">{{ r.id }}</td>
+                        <td class="hist-id">#{{ r.id }}</td>
                         <td class="hist-calc">
                             <a href="{{ url_for('use_calculator', calc_id=r.calculator_id) }}">
                                 {{ r.calculator.title }}
@@ -48,8 +59,7 @@
                             </div>
                         </td>
                         <td class="hist-time">
-                            <i data-lucide="clock"
-                                style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></i>
+                            <i data-lucide="clock"></i>
                             {{ r.calculated_at.strftime('%d %b %Y, %H:%M') }}
                         </td>
                     </tr>
@@ -57,18 +67,21 @@
                 </tbody>
             </table>
         </div>
+
         {% else %}
         <div class="empty-state">
             <div class="empty-icon">
-                <i data-lucide="folder-search" style="width: 64px; height: 64px;"></i>
+                <i data-lucide="folder-search"></i>
             </div>
             <h3>Archive is Empty</h3>
-            <p>No calculations have been logged yet. Launch a tool to generate data.</p>
-            <a href="{{ url_for('index') }}" class="btn-primary">
+            <p>No calculations have been logged yet. Launch a tool to generate the first record.</p>
+            <a href="{{ url_for('index') }}" class="btn-primary" id="history-explore-btn">
                 Explore Engineering Tools
             </a>
         </div>
         {% endif %}
+
     </div>
-</section>
+
+</div>
 {% endblock %}

@@ -1,87 +1,220 @@
 {% extends "base.html" %}
+{% block title %}New Tool — Atlas Copco Engineering Suite{% endblock %}
 {% block page_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
 {% endblock %}
 
 {% block content %}
-<section class="form-page">
+<div class="form-page">
+
+    <!-- ── TEAL BANNER ──────────────────────────────────── -->
+    <div class="form-page-banner">
+        <div class="form-page-banner-inner">
+            <div class="step-indicator">
+                <span class="step-pill">Step 1 of 2</span>
+                <span class="step-label">Tool Configuration</span>
+            </div>
+            <h1 class="form-page-title">{{ 'Update Tool Structure' if is_edit else 'Initialize New Tool' }}</h1>
+            <p class="form-page-sub">
+                {{ 'Modify the architectural structure of this calculator.' if is_edit else 'Define the functional structure of your engineering calculator.' }}
+            </p>
+        </div>
+    </div>
+
+    <!-- ── FORM ─────────────────────────────────────────── -->
     <div class="form-page-container">
 
-        <div class="form-page-header">
-            <p class="section-eyebrow">Platform Configuration — Step 1</p>
-            <h1 class="form-page-title">Initialize New Tool</h1>
-            <p class="form-page-sub">Define the functional structure of your engineering calculator.</p>
-        </div>
-
-        <form method="POST" action="{{ url_for('create_form') }}" class="create-form" id="createForm">
+        <form method="POST" action="{{ url_for('edit_form', calc_id=calc.id) if is_edit else url_for('create_form') }}" class="create-form" id="createForm">
 
             <!-- Title -->
             <div class="form-section">
-                <label class="form-label">Calculator Workspace Title <span class="required">*</span></label>
-                <input type="text" name="title" class="form-input" required
-                    placeholder="e.g. Shaft Diameter Calculation, Torque Analysis…" maxlength="150">
-                <span class="form-hint">This identifier will be used across the platform and in calculation
-                    history.</span>
+                <div class="form-section-title">Calculator Identity</div>
+                <label class="form-label" for="calc-title">
+                    Workspace Title <span class="required">*</span>
+                </label>
+                <input type="text" name="title" id="calc-title" class="form-input" required
+                    placeholder="e.g. Shaft Diameter Calculation, Torque Analysis…"
+                    value="{{ calc.title if is_edit else '' }}"
+                    maxlength="150">
+                <span class="form-hint">
+                    This identifier will appear across the platform and in the calculation audit log.
+                </span>
             </div>
 
-            <!-- Field counts row -->
-            <div class="counts-grid">
+            <!-- Field Counts -->
+            <div class="form-section">
+                <div class="form-section-title">Field Structure</div>
 
-                <div class="count-card">
-                    <div class="count-icon"><i data-lucide="download"></i></div>
-                    <label class="form-label">Input Variables</label>
-                    <div class="counter-control">
-                        <button type="button" class="counter-btn" onclick="changeCount('num_inputs', -1)">−</button>
-                        <input type="number" name="num_inputs" id="num_inputs" value="1" min="1" max="20"
-                            class="counter-input" readonly>
-                        <button type="button" class="counter-btn" onclick="changeCount('num_inputs', 1)">+</button>
+                <div class="counts-grid">
+
+                    <div class="count-card">
+                        <div class="count-icon"><i data-lucide="arrow-down-to-line"></i></div>
+                        <label class="form-label">Input Variables</label>
+                        <div class="counter-control">
+                            <button type="button" class="counter-btn" id="dec-inputs"
+                                    onclick="changeCount('num_inputs', -1)">−</button>
+                            <input type="number" name="num_inputs" id="num_inputs"
+                                   value="{{ config.num_inputs if is_edit else 1 }}" min="1" max="50" class="counter-input" readonly>
+                            <button type="button" class="counter-btn" id="inc-inputs"
+                                    onclick="changeCount('num_inputs', 1)">+</button>
+                        </div>
+                        <span class="form-hint">Numeric values the user enters</span>
                     </div>
-                </div>
 
-                <div class="count-card">
-                    <div class="count-icon"><i data-lucide="upload"></i></div>
-                    <label class="form-label">Calculated Outputs</label>
-                    <div class="counter-control">
-                        <button type="button" class="counter-btn" onclick="changeCount('num_outputs', -1)">−</button>
-                        <input type="number" name="num_outputs" id="num_outputs" value="1" min="1" max="20"
-                            class="counter-input" readonly>
-                        <button type="button" class="counter-btn" onclick="changeCount('num_outputs', 1)">+</button>
+                    <div class="count-card">
+                        <div class="count-icon"><i data-lucide="arrow-up-from-line"></i></div>
+                        <label class="form-label">Calculated Outputs</label>
+                        <div class="counter-control">
+                            <button type="button" class="counter-btn" id="dec-outputs"
+                                    onclick="changeCount('num_outputs', -1)">−</button>
+                            <input type="number" name="num_outputs" id="num_outputs"
+                                   value="{{ config.num_outputs if is_edit else 1 }}" min="1" max="50" class="counter-input" readonly>
+                            <button type="button" class="counter-btn" id="inc-outputs"
+                                    onclick="changeCount('num_outputs', 1)">+</button>
+                        </div>
+                        <span class="form-hint">Formula-derived result fields</span>
                     </div>
-                </div>
 
-                <div class="count-card">
-                    <div class="count-icon"><i data-lucide="lock"></i></div>
-                    <label class="form-label">System Constants</label>
-                    <div class="counter-control">
-                        <button type="button" class="counter-btn" onclick="changeCount('num_constants', -1)">−</button>
-                        <input type="number" name="num_constants" id="num_constants" value="0" min="0" max="20"
-                            class="counter-input" readonly>
-                        <button type="button" class="counter-btn" onclick="changeCount('num_constants', 1)">+</button>
+                    <div class="count-card">
+                        <div class="count-icon"><i data-lucide="lock"></i></div>
+                        <label class="form-label">System Constants</label>
+                        <div class="counter-control">
+                            <button type="button" class="counter-btn" id="dec-constants"
+                                    onclick="changeCount('num_constants', -1)">−</button>
+                            <input type="number" name="num_constants" id="num_constants"
+                                   value="{{ config.num_constants if is_edit else 0 }}" min="0" max="50" class="counter-input" readonly>
+                            <button type="button" class="counter-btn" id="inc-constants"
+                                    onclick="changeCount('num_constants', 1)">+</button>
+                        </div>
+                        <span class="form-hint">Fixed values (gravity, pi, etc.)</span>
                     </div>
-                </div>
 
-                <div class="count-card">
-                    <div class="count-icon"><i data-lucide="list"></i></div>
-                    <label class="form-label">Selection Menus</label>
-                    <div class="counter-control">
-                        <button type="button" class="counter-btn" onclick="changeCount('num_dropdowns', -1)">−</button>
-                        <input type="number" name="num_dropdowns" id="num_dropdowns" value="0" min="0" max="10"
-                            class="counter-input" readonly>
-                        <button type="button" class="counter-btn" onclick="changeCount('num_dropdowns', 1)">+</button>
+                    <div class="count-card">
+                        <div class="count-icon"><i data-lucide="list"></i></div>
+                        <label class="form-label">Selection Menus</label>
+                        <div class="counter-control">
+                            <button type="button" class="counter-btn" id="dec-dropdowns"
+                                    onclick="changeCount('num_dropdowns', -1)">−</button>
+                            <input type="number" name="num_dropdowns" id="num_dropdowns"
+                                   value="{{ config.num_dropdowns if is_edit else 0 }}" min="0" max="20" class="counter-input" readonly>
+                            <button type="button" class="counter-btn" id="inc-dropdowns"
+                                    onclick="changeCount('num_dropdowns', 1)">+</button>
+                        </div>
+                        <span class="form-hint">User-selectable option lists</span>
                     </div>
-                </div>
 
+                </div>
             </div>
 
+            <!-- Actions -->
             <div class="form-actions">
-                <a href="{{ url_for('index') }}" class="btn-ghost">Discard</a>
-                <button type="submit" class="btn-primary lg">
-                    Step 2: Field Details <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+                <a href="{{ url_for('index') }}" class="btn-ghost-dark" id="form-discard-btn">
+                    Discard
+                </a>
+                <button type="submit" class="btn-primary lg" id="form-next-btn">
+                    Step 2: Field Details <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
                 </button>
             </div>
+
         </form>
+
+        <style>
+            .import-options-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+                margin-top: 2.5rem;
+            }
+            .excel-import-card {
+                background: #ffffff;
+                border: 1px solid var(--border);
+                padding: 1.75rem;
+                box-shadow: var(--shadow-card);
+                display: flex;
+                flex-direction: column;
+            }
+            .visual-picker-card { border-color: var(--ac-gold); background: #fdfbf7; }
+            
+            .excel-import-header {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+            .excel-icon-box {
+                width: 44px; height: 44px;
+                background: rgba(0, 75, 80, 0.08);
+                color: var(--ac-teal);
+                display: flex; align-items: center; justify-content: center;
+                border-radius: 4px; flex-shrink: 0;
+            }
+            .gold-icon { background: rgba(184, 151, 42, 0.1); color: var(--ac-gold); }
+            
+            .excel-header-text h3 {
+                font-family: var(--font-heading);
+                font-size: 1.1rem;
+                color: var(--ac-teal-dark);
+                margin: 0;
+            }
+            .excel-header-text p { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+            
+            .badge-new {
+                background: var(--ac-gold);
+                color: #fff;
+                font-size: 0.6rem;
+                padding: 1px 5px;
+                border-radius: 2px;
+                vertical-align: middle;
+                margin-left: 4px;
+            }
+
+            .excel-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .excel-upload-form { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+            .excel-upload-label {
+                background: #fff;
+                border: 1px dashed var(--border);
+                padding: 0.5rem 1rem;
+                display: flex; align-items: center; gap: 8px;
+                font-size: 0.8rem; color: var(--text-muted);
+                cursor: pointer; flex: 1; margin-right: 10px;
+            }
+            .gold-border { border-color: var(--ac-gold); color: var(--ac-gold-dark); }
+            .excel-upload-label:hover { background: var(--bg-page); }
+
+            .btn-outline-teal {
+                border: 1px solid var(--ac-teal);
+                color: var(--ac-teal);
+                padding: 0.5rem 1rem;
+                font-weight: 700; font-size: 0.75rem;
+                display: flex; align-items: center; gap: 6px;
+                text-transform: uppercase; width: fit-content;
+            }
+            .btn-primary.sm { padding: 0.5rem 1rem; font-size: 0.75rem; }
+            .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+        </style>
+
+        <script>
+            function handleFileChange(input) {
+                const label = input.parentElement.querySelector('.file-name-label');
+                const btn = input.parentElement.querySelector('.import-submit-btn');
+                if (input.files && input.files[0]) {
+                    label.textContent = input.files[0].name;
+                    label.style.color = "var(--ac-teal-dark)";
+                    btn.disabled = false;
+                } else {
+                    label.textContent = "Choose File";
+                    btn.disabled = true;
+                }
+            }
+        </script>
     </div>
-</section>
+
+</div>
 
 <script>
     function changeCount(id, delta) {

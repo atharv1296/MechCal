@@ -1,19 +1,34 @@
 {% extends "base.html" %}
+{% block title %}About — Atlas Copco Engineering Suite{% endblock %}
 {% block page_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}">
 {% endblock %}
 
 {% block content %}
-<section class="about-page">
-    <div class="section-container">
-        <p class="section-eyebrow">Enterprise Intelligence</p>
-        <h1 class="section-heading">About the Engineering Suite</h1>
+<div class="about-page">
 
+    <!-- ── TEAL BANNER ───────────────────────────────────── -->
+    <div class="about-banner">
+        <div class="about-banner-inner">
+            <span class="eyebrow">Enterprise Intelligence</span>
+            <h1>About the Engineering Suite</h1>
+            <p>
+                The professional-grade platform standardising mechanical calculation
+                workflows across Atlas Copco Group.
+            </p>
+        </div>
+    </div>
+
+    <!-- ── CONTENT ──────────────────────────────────────── -->
+    <div class="about-body">
         <div class="about-grid">
+
+            <!-- Main Text -->
             <div class="about-main">
                 <p class="about-lead">
-                    The Atlas Copco Mechanical Calculator Suite is an internal engineering platform
-                    built to standardise and accelerate precision calculations across departments.
+                    The Atlas Copco Mechanical Calculator Suite is an internal engineering
+                    platform built to standardise and accelerate precision calculations
+                    across departments.
                 </p>
                 <p>
                     Engineers can create purpose-built calculators for any mechanical computation —
@@ -22,24 +37,40 @@
                 </p>
                 <p>
                     Each calculator supports dynamic input fields, named constants, dropdown
-                    selection menus and formula-driven output expressions. Results are automatically
-                    logged to the history for traceability and engineering sign-off.
+                    selection menus and formula-driven output expressions. Results are
+                    automatically logged to the history for full traceability and engineering sign-off.
                 </p>
 
                 <div class="about-features-list">
-                    <div class="about-feat"><i data-lucide="check-circle-2"></i> No-code formula builder</div>
-                    <div class="about-feat"><i data-lucide="check-circle-2"></i> Math function support</div>
-                    <div class="about-feat"><i data-lucide="check-circle-2"></i> Reusable templates</div>
-                    <div class="about-feat"><i data-lucide="check-circle-2"></i> Calculation audit trail</div>
-                    <div class="about-feat"><i data-lucide="check-circle-2"></i> ISO-ready precision</div>
-                    <div class="about-feat"><i data-lucide="check-circle-2"></i> Responsive interface</div>
+                    <div class="about-feat">
+                        <i data-lucide="check-circle-2"></i> No-code formula builder
+                    </div>
+                    <div class="about-feat">
+                        <i data-lucide="check-circle-2"></i> Full math function support
+                    </div>
+                    <div class="about-feat">
+                        <i data-lucide="check-circle-2"></i> Reusable tool templates
+                    </div>
+                    <div class="about-feat">
+                        <i data-lucide="check-circle-2"></i> Calculation audit trail
+                    </div>
+                    <div class="about-feat">
+                        <i data-lucide="check-circle-2"></i> ISO-ready precision
+                    </div>
+                    <div class="about-feat">
+                        <i data-lucide="check-circle-2"></i> Responsive interface
+                    </div>
                 </div>
             </div>
 
+            <!-- Sidebar -->
             <div class="about-sidebar">
+
+                <!-- Platform Details -->
                 <div class="about-info-card">
-                    <h3><i data-lucide="info" style="width: 18px; vertical-align: middle; margin-right: 8px;"></i>
-                        Platform Details</h3>
+                    <h3>
+                        <i data-lucide="info"></i> Platform Details
+                    </h3>
                     <table class="info-table">
                         <tr>
                             <td>Company</td>
@@ -55,7 +86,7 @@
                         </tr>
                         <tr>
                             <td>Stack</td>
-                            <td>Python / SQL / JS</td>
+                            <td>Python / SQLite / JS</td>
                         </tr>
                         <tr>
                             <td>Sandbox</td>
@@ -68,15 +99,18 @@
                     </table>
                 </div>
 
+                <!-- CTA Card -->
                 <div class="about-cta-card">
                     <h3>Ready to build?</h3>
                     <p>Standardize your team's workflow with a custom calculation tool today.</p>
-                    <a href="{{ url_for('create_form') }}" class="btn-primary">
+                    <a href="{{ url_for('create_form') }}" class="btn-cta-gold" id="about-create-btn">
                         <i data-lucide="plus-circle"></i> Create New Form
                     </a>
                 </div>
+
             </div>
         </div>
     </div>
-</section>
+
+</div>
 {% endblock %}

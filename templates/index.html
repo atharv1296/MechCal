@@ -1,106 +1,114 @@
 {% extends "base.html" %}
+{% block title %}Atlas Copco | Engineering Calculator Suite{% endblock %}
 {% block page_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 {% endblock %}
 
 {% block content %}
 
-<!-- ── HERO ───────────────────────────────────────────────── -->
+<!-- ── HERO ─────────────────────────────────────────────── -->
 <section class="hero">
-    <div class="hero-content">
-        <div class="hero-text">
-            <p class="hero-eyebrow">Atlas Copco Engineering Suite</p>
-            <h1 class="hero-heading">
-                Precision<br>
-                <span style="color: var(--ac-blue-light);">Calculators</span>
-            </h1>
-            <p class="hero-sub">
-                Empowering Atlas Copco engineers with dynamic, formula-driven computation tools.
-                Build, share, and track critical engineering analysis in one professional platform.
-            </p>
-            <div class="hero-actions">
-                <a href="{{ url_for('create_form') }}" class="btn-primary">
-                    <i data-lucide="plus-circle" style="width: 20px; height: 20px;"></i> Create New Form
-                </a>
-                <a href="{{ url_for('about') }}" class="btn-ghost">Learn More</a>
-            </div>
-        </div>
-
-        <div class="hero-stats">
-            <div class="stat-card">
-                <span class="stat-num">{{ calculators|length }}</span>
-                <span class="stat-label">Active Tools</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-num">∞</span>
-                <span class="stat-label">Scalability</span>
-            </div>
-            <div class="stat-card" style="grid-column: span 2;">
-                <span class="stat-num">ISO-9001</span>
-                <span class="stat-label">Engineering Standards Compliant</span>
-            </div>
+    <div class="hero-inner">
+        <span class="hero-eyebrow">Atlas Copco Engineering Suite</span>
+        <h1 class="hero-heading">
+            Precision Calculators for<br>Mechanical Engineering
+        </h1>
+        <p class="hero-sub">
+            Empowering Atlas Copco engineers with dynamic, formula-driven computation tools.
+            Build, share, and track critical engineering analysis with ease.
+        </p>
+        <div class="hero-actions">
+            {% if current_user_role == 'admin' %}
+            <a href="{{ url_for('create_form') }}" class="btn-primary" id="hero-create-btn">
+                <i data-lucide="plus-circle"></i> Create New Tool
+            </a>
+            {% endif %}
+            <a href="{{ url_for('about') }}" class="btn-ghost" id="hero-learn-btn">Learn More</a>
         </div>
     </div>
 </section>
 
-<!-- ── FEATURES ───────────────────────────────────────────── -->
+<!-- ── QUICK FACTS STRIP ────────────────────────────────── -->
+<div class="facts-strip">
+    <div class="facts-strip-inner">
+        <div class="fact-box">
+            <span class="fact-cat">Active Tools</span>
+            <div class="fact-title">Engineering Library</div>
+            <p class="fact-desc">Ready-to-use calculation tools available on this platform.</p>
+            <div class="fact-stat">{{ calculators|length }}</div>
+        </div>
+        <!-- ISO-9001 box removed -->
+        <div class="fact-box">
+            <span class="fact-cat">Since</span>
+            <div class="fact-title">Innovating Together</div>
+            <p class="fact-desc">Atlas Copco — engineering innovation since our founding.</p>
+            <div class="fact-stat">1873</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── FEATURES ─────────────────────────────────────────── -->
 <section class="features-section">
     <div class="section-container">
-        <div class="header-center">
-            <p class="section-eyebrow">Enterprise Capabilities</p>
-            <h2 class="section-heading">Engineered for Reliability</h2>
-        </div>
+        <span class="section-label">Enterprise Capabilities</span>
+        <h2 class="section-heading">Engineered for Reliability</h2>
+        <p class="section-sub">
+            A professional-grade platform that standardises and accelerates precision
+            calculations across engineering departments.
+        </p>
 
         <div class="features-grid">
+
             <div class="feature-card">
-                <div class="feature-icon-wrapper">
-                    <i data-lucide="layout"></i>
-                </div>
+                <span class="feature-icon"><i data-lucide="layout"></i></span>
                 <h3>Dynamic Generation</h3>
-                <p>Define custom input, output, and constant fields tailored to specific mechanical engineering
-                    requirements.</p>
+                <p>Define custom input, output, and constant fields tailored to specific
+                    mechanical engineering requirements — no coding needed.</p>
+                <span class="feature-link">Explore</span>
             </div>
+
             <div class="feature-card">
-                <div class="feature-icon-wrapper">
-                    <i data-lucide="variable"></i>
-                </div>
+                <span class="feature-icon"><i data-lucide="variable"></i></span>
                 <h3>Advanced Formulas</h3>
-                <p>Supports full mathematical syntax including trigonometric, logarithmic, and exponential functions.
-                </p>
+                <p>Supports full mathematical syntax including trigonometric, logarithmic,
+                    and exponential functions for complex analysis.</p>
+                <span class="feature-link">Learn more</span>
             </div>
+
             <div class="feature-card">
-                <div class="feature-icon-wrapper">
-                    <i data-lucide="history"></i>
-                </div>
+                <span class="feature-icon"><i data-lucide="history"></i></span>
                 <h3>Calculation Audit</h3>
-                <p>Maintain a complete history of runs for audit trails, comparison, and verification of engineering
-                    results.</p>
+                <p>Maintain a complete history of all runs for engineering audit trails,
+                    comparison, and sign-off verification.</p>
+                <span class="feature-link">View log</span>
             </div>
+
             <div class="feature-card">
-                <div class="feature-icon-wrapper">
-                    <i data-lucide="share-2"></i>
-                </div>
+                <span class="feature-icon"><i data-lucide="share-2"></i></span>
                 <h3>Team Ready</h3>
-                <p>Standardized tools that can be shared across departments to ensure consistency in engineering
-                    calculations.</p>
+                <p>Standardised tools shared across departments ensure consistency and
+                    reproducibility in all engineering calculations.</p>
+                <span class="feature-link">Discover</span>
             </div>
+
         </div>
     </div>
 </section>
 
-<!-- ── SAVED CALCULATORS ───────────────────────────────────── -->
+<!-- ── SAVED CALCULATORS ─────────────────────────────────── -->
 {% if calculators %}
-<section class="calcs-section">
+<section class="calcs-section" id="tools-section">
     <div class="section-container">
         <div class="section-header-row">
             <div>
-                <p class="section-eyebrow">Tool Library</p>
+                <span class="section-label">Tool Library</span>
                 <h2 class="section-heading">Ready-to-Use Tools</h2>
             </div>
-            <a href="{{ url_for('create_form') }}" class="btn-primary"
-                style="padding: 0.6rem 1.25rem; font-size: 0.9rem;">
-                <i data-lucide="plus" style="width: 16px; height: 16px;"></i> New Tool
+            {% if current_user_role == 'admin' %}
+            <a href="{{ url_for('create_form') }}" class="btn-teal-outline" id="calcs-new-tool-btn">
+                <i data-lucide="plus"></i> New Tool
             </a>
+            {% endif %}
         </div>
 
         <div class="calc-cards-grid">
@@ -110,25 +118,58 @@
                     <div class="calc-card-icon">
                         <i data-lucide="calculator"></i>
                     </div>
-                    <div class="calc-card-meta">
-                        <span>{{ calc.created_at.strftime('%d %b %Y') }}</span>
-                    </div>
+                    <span class="calc-card-meta">{{ calc.created_at.strftime('%d %b %Y') }}</span>
                 </div>
                 <h3 class="calc-card-title">{{ calc.title }}</h3>
                 <div class="calc-card-actions">
-                    <a href="{{ url_for('use_calculator', calc_id=calc.id) }}" class="btn-use">Launch Tool</a>
+                    <a href="{{ url_for('use_calculator', calc_id=calc.id) }}"
+                       class="btn-use" id="launch-calc-{{ calc.id }}">Launch Tool</a>
+                    {% if current_user_role == 'admin' %}
+                    <a href="{{ url_for('edit_form', calc_id=calc.id) }}" 
+                       class="btn-edit-tool" title="Edit Structure" id="edit-calc-{{ calc.id }}"
+                       onclick="return confirm('Do you want to update this tool structure?');">
+                        <i data-lucide="settings-2"></i>
+                    </a>
                     <form method="POST" action="{{ url_for('delete_calculator', calc_id=calc.id) }}"
-                        onsubmit="return confirm('Archive this engineering tool?');" style="display:inline;">
-                        <button type="submit" class="btn-delete" title="Delete">
-                            <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+                          onsubmit="return confirm('Archive this engineering tool?');" style="display:inline;">
+                        <button type="submit" class="btn-delete" title="Delete" id="delete-calc-{{ calc.id }}">
+                            <i data-lucide="trash-2"></i>
                         </button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
 </section>
+{% else %}
+<!-- Empty state when no calculators exist yet -->
+<section class="calcs-section" id="tools-section">
+    <div class="section-container">
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i data-lucide="folder-open"></i>
+            </div>
+            <h3>No Tools Created Yet</h3>
+            <p>Your engineering tool library is empty. Create your first calculator to get started.</p>
+            {% if current_user_role == 'admin' %}
+            <a href="{{ url_for('create_form') }}" class="btn-primary" id="empty-create-btn">
+                <i data-lucide="plus-circle"></i> Create First Tool
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
 {% endif %}
+
+<script>
+    window.addEventListener('load', function () {
+        var section = document.getElementById('tools-section');
+        if (section) {
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+</script>
 
 {% endblock %}

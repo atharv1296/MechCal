@@ -1,128 +1,209 @@
+/* ═══════════════════════════════════════════════════════════
+   ABOUT PAGE — Atlas Copco Visual Identity
+   ═══════════════════════════════════════════════════════════ */
 
 .about-page {
-  padding: 6rem 0 10rem;
-  margin: 3rem;
+  padding: 0 0 6rem;
+}
+
+/* ── ABOUT BANNER ────────────────────────────────────────── */
+.about-banner {
+  background: var(--ac-teal);
+  padding: 3.5rem 2rem;
+}
+
+.about-banner-inner {
+  max-width: var(--content-w);
+  margin: 0 auto;
+}
+
+.about-banner .eyebrow {
+  color: var(--ac-gold);
+  margin-bottom: 0.75rem;
+}
+
+.about-banner h1 {
+  font-family: var(--font-heading);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+}
+
+.about-banner p {
+  color: rgba(255,255,255,0.7);
+  font-size: 1rem;
+  max-width: 600px;
+}
+
+/* ── ABOUT BODY ─────────────────────────────────────────── */
+.about-body {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 3.5rem 2rem 0;
 }
 
 .about-grid {
   display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 6rem;
-  margin-top: 4rem;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 4rem;
   align-items: start;
 }
 
+/* ── MAIN TEXT COLUMN ───────────────────────────────────── */
 .about-lead {
-  font-size: 1.65rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.5;
-  margin-bottom: 2.5rem;
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
 }
 
 .about-main p {
-  margin-bottom: 2rem;
-  font-size: 1.15rem;
-  color: var(--text-muted);
-  line-height: 1.8;
+  font-size: 0.97rem;
+  color: var(--text-body);
+  line-height: 1.75;
+  margin-bottom: 1.25rem;
 }
 
-/* ── FEATURES LIST ───────────────────────────────────────── */
+/* Feature checklist */
 .about-features-list {
+  margin-top: 2rem;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
-  margin-top: 4rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
 }
 
 .about-feat {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  background: var(--bg-surface);
-  padding: 1.25rem 1.5rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  transition: transform 0.2s, border-color 0.2s;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-body);
+  padding: 0.85rem 1rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s ease;
 }
 
-.about-feat:hover {
-  border-color: var(--ac-blue-light);
-  transform: translateY(-2px);
-}
+.about-feat:hover { background: var(--bg-warm); }
 
 .about-feat i {
-  color: var(--ac-blue-light);
+  width: 16px;
+  height: 16px;
+  color: var(--ac-teal);
   flex-shrink: 0;
+  stroke-width: 2.5;
 }
 
-/* ── SIDEBAR CARDS ───────────────────────────────────────── */
-.about-info-card,
-.about-cta-card {
-  background: var(--bg-surface);
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+.about-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.about-info-card {
+  background: var(--bg-warm);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 3rem;
-  margin-bottom: 2.5rem;
+  padding: 2rem;
 }
 
-.about-info-card h3,
-.about-cta-card h3 {
-  font-size: 1.5rem;
-  margin-bottom: 2.5rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1.25rem;
+.about-info-card h3 {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ac-teal);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.about-info-card h3 i {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
 }
 
 .info-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 0.88rem;
 }
 
 .info-table td {
-  padding: 1rem 0;
-  font-size: 0.95rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
+  color: var(--text-body);
 }
+
+.info-table tr:last-child td { border-bottom: none; }
 
 .info-table td:first-child {
-  color: var(--text-muted);
   font-weight: 600;
-  width: 150px;
+  color: var(--text-dark);
+  width: 42%;
+  padding-right: 1rem;
 }
 
-.info-table td:last-child {
-  color: var(--text-primary);
-  font-weight: 500;
-  text-align: right;
-}
-
+/* CTA Card */
 .about-cta-card {
-  background: linear-gradient(135deg, var(--ac-blue-dark), var(--ac-blue));
-  border-color: var(--ac-blue-light);
-  text-align: center;
+  background: var(--ac-teal);
+  padding: 2rem;
+}
+
+.about-cta-card h3 {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
 }
 
 .about-cta-card p {
-  margin-bottom: 2.5rem;
-  opacity: 0.9;
-  font-size: 1.1rem;
-  line-height: 1.6;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
 }
 
-.about-cta-card .btn-primary {
-  width: 100%;
-  justify-content: center;
-  padding: 1rem;
+/* CTA button on dark background */
+.btn-cta-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--ac-gold);
+  color: var(--ac-teal);
+  padding: 0.75rem 1.75rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  border-radius: var(--radius-none);
+  border: 2px solid var(--ac-gold);
+  transition: background 0.2s, border-color 0.2s;
 }
 
-@media (max-width: 1100px) {
-  .about-grid { grid-template-columns: 1fr; gap: 4rem; }
-  .about-sidebar { max-width: 500px; margin: 0 auto; }
+.btn-cta-gold:hover {
+  background: var(--ac-gold-dark);
+  border-color: var(--ac-gold-dark);
+  color: var(--ac-teal);
 }
 
-@media (max-width: 768px) {
-  .about-features-list { grid-template-columns: 1fr; }
+.btn-cta-gold i { width: 16px; height: 16px; }
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .about-grid            { grid-template-columns: 1fr; gap: 2.5rem; }
+  .about-features-list   { grid-template-columns: 1fr; }
 }

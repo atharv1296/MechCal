@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Atlas Copco Engineering Calculator Suite — Secure Login" />
+    <title>Atlas Copco | Secure Login</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* ── Variables (mirrors base.css exactly) ── */
+        :root {
+            --ac-teal:       #004b50;
+            --ac-teal-dark:  #003840;
+            --ac-teal-mid:   #206b6b;
+            --ac-gold:       #b8972a;
+            --ac-gold-dark:  #9a7c22;
+            --bg-page:       #f5f2ed;
+            --bg-white:      #ffffff;
+            --bg-card:       #dce8e8;
+            --text-dark:     #1c1c1c;
+            --text-body:     #444444;
+            --text-muted:    #666666;
+            --border:        #d0d8d8;
+            --border-light:  #e8ecec;
+            --font-heading:  'Lora', Georgia, serif;
+            --font-body:     'Source Sans 3', 'Arial', sans-serif;
+            --radius-none:   0px;
+            --radius-sm:     2px;
+            --shadow-card:   0 1px 4px rgba(0,0,0,0.08);
+            --shadow-lifted: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; font-size: 16px; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-page);
+            color: var(--text-body);
+            line-height: 1.65;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { color: inherit; text-decoration: none; transition: color 0.2s; }
+
+        /* ── Top Utility Bar (identical to base.html) ── */
+        .topbar {
+            background: #002b30;
+            color: rgba(255,255,255,0.65);
+            font-size: 0.78rem;
+            font-family: var(--font-body);
+            padding: 0.4rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 1.75rem;
+            letter-spacing: 0.02em;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .topbar-item {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .topbar-item i { width: 12px; height: 12px; stroke-width: 2; }
+
+        /* ── Navbar (identical visual to base.html) ── */
+        .navbar {
+            height: 72px;
+            background: var(--ac-teal);
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .brand-logo-block {
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
+        }
+
+        .brand-main {
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #ffffff;
+            letter-spacing: 0.01em;
+        }
+
+        .brand-sub {
+            font-family: var(--font-body);
+            font-weight: 300;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.8);
+            letter-spacing: 0.02em;
+        }
+
+        .nav-badge {
+            background: var(--ac-gold);
+            color: var(--ac-teal);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0.3rem 0.9rem;
+        }
+
+        /* ── Page Body ── */
+        .login-page {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1.5rem;
+        }
+
+        /* ── Section eyebrow (same pattern as index.html) ── */
+        .section-eyebrow {
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--ac-teal-mid);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        /* ── Two-column layout ── */
+        .login-wrapper {
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr 440px;
+            gap: 0;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lifted);
+            background: var(--bg-white);
+        }
+
+        /* ── Left panel: Brand / info ── */
+        .brand-panel {
+            background: var(--ac-teal);
+            padding: 3.5rem 3rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* subtle diagonal overlay */
+        .brand-panel::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            right: -60px;
+            width: 260px;
+            height: 260px;
+            background: rgba(255,255,255,0.03);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+        .brand-panel-logo {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .brand-panel-logo .bp-main {
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #ffffff;
+            letter-spacing: 0.01em;
+        }
+
+        .brand-panel-logo .bp-sub {
+            font-family: var(--font-body);
+            font-weight: 300;
+            font-size: 0.88rem;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .brand-panel h2 {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #ffffff;
+            line-height: 1.35;
+        }
+
+        .brand-panel h2 em {
+            font-style: normal;
+            color: var(--ac-gold);
+        }
+
+        .brand-panel-desc {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.6);
+            line-height: 1.7;
+            max-width: 340px;
+        }
+
+        /* Role info cards */
+        .role-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: auto;
+        }
+
+        .role-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.06);
+            border-left: 3px solid transparent;
+        }
+
+        .role-item.admin { border-left-color: var(--ac-gold); }
+        .role-item.user  { border-left-color: rgba(255,255,255,0.4); }
+
+        .role-icon-box {
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .role-icon-box i { width: 16px; height: 16px; color: rgba(255,255,255,0.85); }
+        .role-item.admin .role-icon-box i { color: var(--ac-gold); }
+
+        .role-text h4 {
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 3px;
+        }
+
+        .role-text p {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.4;
+        }
+
+        .role-cred {
+            display: inline-block;
+            margin-top: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: var(--ac-gold);
+            background: rgba(184,151,42,0.12);
+            padding: 2px 8px;
+            border: 1px solid rgba(184,151,42,0.25);
+        }
+
+        /* ── Right panel: Login form ── */
+        .login-form-panel {
+            background: var(--bg-white);
+            padding: 3.5rem 2.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .form-header .eyebrow {
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--ac-teal-mid);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header h2 {
+            font-family: var(--font-heading);
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .form-header p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+        }
+
+        /* Gold accent underline — Atlas Copco-style section divider */
+        .gold-bar {
+            width: 36px;
+            height: 3px;
+            background: var(--ac-gold);
+            margin-top: 12px;
+        }
+
+        /* Error banner */
+        .error-banner {
+            background: #fdecea;
+            border-left: 4px solid #c0392b;
+            color: #922b21;
+            padding: 0.85rem 1rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .error-banner i { width: 16px; height: 16px; flex-shrink: 0; }
+
+        /* Flash banner */
+        .flash-banner {
+            background: #eaf4ec;
+            border-left: 4px solid #2e7d45;
+            color: #1e5530;
+            padding: 0.85rem 1rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .flash-banner.flash-warning {
+            background: #fdf8e6;
+            border-left-color: var(--ac-gold);
+            color: #7a5c00;
+        }
+
+        .flash-banner.flash-info {
+            background: #e8f2f2;
+            border-left-color: var(--ac-teal);
+            color: var(--ac-teal-dark);
+        }
+
+        /* Form fields */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 0.45rem;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 15px;
+            height: 15px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 0.875rem 0.75rem 2.4rem;
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-none);
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--ac-teal);
+            background: #ffffff;
+            box-shadow: inset 0 0 0 1px var(--ac-teal);
+        }
+
+        .form-input::placeholder { color: #aaa; }
+
+        /* Password toggle */
+        .pw-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            padding: 0;
+        }
+
+        .pw-toggle i { width: 16px; height: 16px; }
+        .pw-toggle:hover { color: var(--ac-teal); }
+
+        /* Submit button — matches .nav-cta */
+        .btn-submit {
+            width: 100%;
+            padding: 0.9rem 1.5rem;
+            background: var(--ac-teal);
+            color: #ffffff;
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border: none;
+            border-radius: var(--radius-none);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            transition: background 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        .btn-submit:hover { background: var(--ac-teal-dark); }
+        .btn-submit i { width: 16px; height: 16px; }
+
+        /* Bottom note */
+        .form-footer {
+            margin-top: 1.75rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-light);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* ── Footer ── */
+        .page-footer {
+            background: var(--ac-teal);
+        }
+
+        .page-footer-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .page-footer-copy {
+            color: rgba(255,255,255,0.38);
+            font-size: 0.8rem;
+        }
+
+        .page-footer-links {
+            display: flex;
+            gap: 1.75rem;
+        }
+
+        .page-footer-links a {
+            color: rgba(255,255,255,0.38);
+            font-size: 0.8rem;
+            transition: color 0.2s;
+        }
+
+        .page-footer-links a:hover { color: rgba(255,255,255,0.7); }
+
+        /* ── Responsive ── */
+        @media (max-width: 760px) {
+            .login-wrapper { grid-template-columns: 1fr; max-width: 440px; }
+            .brand-panel   { display: none; }
+            .login-form-panel { padding: 2.5rem 1.75rem; }
+            .page-footer-inner { flex-direction: column; gap: 0.5rem; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Top Bar ── -->
+    <div class="topbar">
+        <!-- Info items removed -->
+    </div>
+
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="brand-logo-block">
+                <span class="brand-main">Atlas Copco</span>
+                <span class="brand-sub">Group</span>
+            </div>
+            <span class="nav-badge">Engineering Calculator Suite</span>
+        </div>
+    </nav>
+
+    <!-- ── Flash messages (from redirects) ── -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div style="max-width:1000px;margin:1.25rem auto;padding:0 1.5rem;">
+            <div class="flash-banner flash-{{ category }}">
+                <i data-lucide="{% if category == 'warning' %}alert-triangle{% elif category == 'error' %}x-circle{% elif category == 'success' %}check-circle{% else %}info{% endif %}"></i>
+                {{ message }}
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- ── Login Page Body ── -->
+    <main class="login-page">
+        <div class="login-wrapper">
+
+            <!-- Left: Brand Info Panel -->
+            <div class="brand-panel">
+                <div class="brand-panel-logo">
+                    <span class="bp-main">Atlas Copco</span>
+                    <span class="bp-sub">Group</span>
+                </div>
+
+                <h2>
+                    Engineering<br>
+                    <em>Precision</em><br>
+                    at Every Step
+                </h2>
+
+                <p class="brand-panel-desc">
+                    The Atlas Copco Engineering Calculator Suite empowers your team
+                    with dynamic, formula-driven computation tools — built for
+                    reliability and precision across all mechanical engineering disciplines.
+                </p>
+
+                <div class="role-list">
+                    <div class="role-item admin">
+                        <div class="role-icon-box"><i data-lucide="shield"></i></div>
+                        <div class="role-text">
+                            <h4>Administrator</h4>
+                            <p>Create, configure &amp; manage engineering tools.</p>
+                            <span class="role-cred">admin / admin123</span>
+                        </div>
+                    </div>
+                    <div class="role-item user">
+                        <div class="role-icon-box"><i data-lucide="user-check"></i></div>
+                        <div class="role-text">
+                            <h4>Employee / User</h4>
+                            <p>Access and use all published calculation tools.</p>
+                            <span class="role-cred">user / user123</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Login Form -->
+            <div class="login-form-panel">
+                <div class="form-header">
+                    <span class="eyebrow">Secure Access</span>
+                    <h2>Sign In</h2>
+                    <p>Enter your credentials to access the suite.</p>
+                    <div class="gold-bar"></div>
+                </div>
+
+                {% if error %}
+                <div class="error-banner" id="login-error-msg">
+                    <i data-lucide="alert-circle"></i>
+                    {{ error }}
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('login') }}" id="login-form">
+                    <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+
+                    <div class="form-group">
+                        <label for="login-username">Username</label>
+                        <div class="input-wrap">
+                            <i data-lucide="user" class="input-icon"></i>
+                            <input
+                                type="text"
+                                class="form-input"
+                                id="login-username"
+                                name="username"
+                                placeholder="Enter your username"
+                                autocomplete="username"
+                                required
+                                value="{{ request.form.get('username', '') }}"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <div class="input-wrap">
+                            <i data-lucide="lock" class="input-icon"></i>
+                            <input
+                                type="password"
+                                class="form-input"
+                                id="login-password"
+                                name="password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+                            <button type="button" class="pw-toggle" id="pw-toggle-btn" aria-label="Show / hide password">
+                                <i data-lucide="eye" id="pw-eye-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="btn-sign-in">
+                        <i data-lucide="log-in"></i>
+                        Sign In to Suite
+                    </button>
+                </form>
+
+                <div class="form-footer">
+                    &copy; 2024 Atlas Copco Group &nbsp;·&nbsp; All rights reserved<br>
+                    Internal Secure Platform
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ── Footer ── -->
+    <footer class="page-footer">
+        <div class="page-footer-inner">
+            <p class="page-footer-copy">&copy; 2024 Atlas Copco Group. All rights reserved.</p>
+            <div class="page-footer-links">
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Cookies</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // Password visibility toggle
+        const pwToggle = document.getElementById('pw-toggle-btn');
+        const pwInput  = document.getElementById('login-password');
+        const pwEye    = document.getElementById('pw-eye-icon');
+        if (pwToggle) {
+            pwToggle.addEventListener('click', () => {
+                const isHidden = pwInput.type === 'password';
+                pwInput.type   = isHidden ? 'text' : 'password';
+                pwEye.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+                lucide.createIcons();
+            });
+        }
+    </script>
+</body>
+</html>

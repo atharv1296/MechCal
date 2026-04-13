@@ -1,30 +1,34 @@
 {% extends "base.html" %}
-{% block title %}{{ calc.title }} — Atlas Copco{% endblock %}
+{% block title %}{{ calc.title }} — Atlas Copco Engineering Suite{% endblock %}
 {% block page_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/calculator.css') }}">
 {% endblock %}
 
 {% block content %}
-<section class="calc-page">
-    <div class="calc-page-container">
+<div class="calc-page">
 
-        <!-- Page Header -->
-        <div class="calc-page-header">
-            <div class="calc-breadcrumb">
+    <!-- ── PAGE BANNER ───────────────────────────────────── -->
+    <div class="calc-page-banner">
+        <div class="calc-page-banner-inner">
+            <nav class="calc-breadcrumb" aria-label="breadcrumb">
                 <a href="{{ url_for('index') }}">Home</a>
-                <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+                <i data-lucide="chevron-right"></i>
                 <span>{{ calc.title }}</span>
-            </div>
+            </nav>
             <h1 class="calc-main-title">{{ calc.title }}</h1>
             <p class="calc-subtitle">Configure parameters and compute precise engineering results.</p>
         </div>
+    </div>
 
-        <form method="POST" action="{{ url_for('use_calculator', calc_id=calc.id) }}" class="calc-form">
+    <!-- ── CALCULATOR BODY ───────────────────────────────── -->
+    <div class="calc-page-container">
+        <form method="POST" action="{{ url_for('use_calculator', calc_id=calc.id) }}" class="calc-form" id="calc-form">
             <div class="calc-grid">
 
                 <!-- LEFT PANEL: Inputs -->
                 <div class="calc-panel inputs-panel">
 
+                    <!-- Input Parameters -->
                     {% if config.get('inputs') %}
                     <div class="panel-section">
                         <h2 class="panel-heading">
@@ -32,9 +36,7 @@
                         </h2>
                         {% for i, inp in enumerate(config['inputs']) %}
                         <div class="calc-field">
-                            <label class="calc-label" for="input_{{ i }}">
-                                {{ inp['label'] }}
-                            </label>
+                            <label class="calc-label" for="input_{{ i }}">{{ inp['label'] }}</label>
                             <div class="input-wrap">
                                 <input type="number" step="any"
                                        name="input_{{ i }}"
@@ -50,8 +52,9 @@
                     </div>
                     {% endif %}
 
+                    <!-- System Constants -->
                     {% if config.get('constants') %}
-                    <div class="panel-section constants-panel-section">
+                    <div class="panel-section">
                         <h2 class="panel-heading">
                             <i data-lucide="lock"></i> System Constants
                         </h2>
@@ -66,6 +69,7 @@
                     </div>
                     {% endif %}
 
+                    <!-- Selection Fields -->
                     {% if config.get('dropdowns') %}
                     <div class="panel-section">
                         <h2 class="panel-heading">
@@ -76,22 +80,34 @@
                             <label class="calc-label" for="dropdown_{{ i }}">{{ dd['label'] }}</label>
                             <select name="dropdown_{{ i }}" id="dropdown_{{ i }}" class="calc-select">
                                 <option value="">— Select {{ dd['label'] }} —</option>
-                                {% for item in dd['items'] %}
-                                <option value="{{ item }}">{{ item }}</option>
-                                {% endfor %}
+                                {% if dd.options %}
+                                    {% for opt in dd.options %}
+                                    <option value="{{ opt.value }}" {% if form_vals.get('dropdown_' ~ i) == opt.value|string %}selected{% endif %}>
+                                        {{ opt.label }}
+                                    </option>
+                                    {% endfor %}
+                                {% elif dd.items %}
+                                    {# Compatibility with old structure #}
+                                    {% for it in dd.items %}
+                                    <option value="{{ it }}" {% if form_vals.get('dropdown_' ~ i) == it|string %}selected{% endif %}>
+                                        {{ it }}
+                                    </option>
+                                    {% endfor %}
+                                {% endif %}
                             </select>
                         </div>
                         {% endfor %}
                     </div>
                     {% endif %}
 
+                    <!-- Action Buttons -->
                     <div class="calc-btn-row">
-                        <button type="submit" class="btn-calculate">
-                            <i data-lucide="zap"></i>
-                            Compute Results
+                        <button type="submit" class="btn-calculate" id="calc-submit-btn">
+                            <i data-lucide="zap"></i> Compute Results
                         </button>
-                        <button type="reset" class="btn-reset">Reset</button>
+                        <button type="reset" class="btn-reset" id="calc-reset-btn">Reset</button>
                     </div>
+
                 </div>
 
                 <!-- RIGHT PANEL: Outputs -->
@@ -105,42 +121,205 @@
                         <div class="result-card {% if r.error %}result-error{% else %}result-ok{% endif %}">
                             <div class="result-label">{{ r.label }}</div>
                             {% if r.error %}
-                                <div class="result-value error-val" style="color: #f87171; font-size: 1.2rem;">
-                                    <i data-lucide="alert-circle" style="width: 20px; vertical-align: middle;"></i> Error in Formula
+                                <div class="error-val">
+                                    <i data-lucide="alert-circle" style="width:16px; vertical-align:middle;"></i>
+                                    Formula Error
                                 </div>
                                 <div class="result-formula error-msg">{{ r.error }}</div>
                             {% else %}
                                 <div class="result-value">{{ r.value }}</div>
-                                <div class="result-formula">Logic: <code>{{ r.formula }}</code></div>
+                                <div class="result-formula">
+                                    Formula: <code>{{ r.formula }}</code>
+                                </div>
                             {% endif %}
                         </div>
                         {% endfor %}
 
                         <div class="result-timestamp">
-                            <i data-lucide="check-circle-2" style="width: 14px; height: 14px; vertical-align: middle;"></i> Verified at {{ now }}
+                            <i data-lucide="check-circle-2"></i>
+                            Computed &amp; verified at {{ now }}
+                        </div>
+
+                        <!-- ── PDF REPORT ACTION ──────────────────────────────── -->
+                        <div class="report-action-wrap">
+                            <button type="button" class="btn-generate-pdf" onclick="openReportModal()">
+                                <i data-lucide="file-text"></i> Generate PDF Report
+                            </button>
+                            <p class="report-hint">Includes inputs, results, and reference images.</p>
                         </div>
 
                     {% else %}
-                        <!-- Placeholder output slots -->
+                        <!-- Placeholder slots -->
                         {% if config.get('outputs') %}
                             {% for out in config['outputs'] %}
-                            <div class="result-card result-pending" style="opacity: 0.5;">
+                            <div class="result-card result-pending">
                                 <div class="result-label">{{ out['label'] }}</div>
-                                <div class="result-value pending-val">—</div>
+                                <div class="result-value">—</div>
                                 <div class="result-formula">Formula: <code>{{ out['formula'] }}</code></div>
                             </div>
                             {% endfor %}
                         {% endif %}
+
                         <div class="results-placeholder">
-                            <i data-lucide="play-circle" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.3;"></i>
-                            <p>Ready to calculate. Provide inputs and execute.</p>
+                            <i data-lucide="play-circle" style="width:44px; height:44px;"></i>
+                            <p>Provide inputs and click <strong>Compute Results</strong> to execute.</p>
                         </div>
                     {% endif %}
-                </div>
 
-            </div>
+                </div><!-- /outputs-panel -->
+
+            </div><!-- /calc-grid -->
         </form>
 
-    </div>
-</section>
+        <!-- ── REFERENCE IMAGES GALLERY ───────────────────────── -->
+        {% set ref_images = config.get('images', []) %}
+        {% if ref_images %}
+        <div class="ref-images-section">
+            <div class="ref-images-header">
+                <div class="ref-images-title">
+                    <i data-lucide="image"></i>
+                    <span>Reference Images</span>
+                    <span class="ref-img-count">{{ ref_images|length }}</span>
+                </div>
+                <p class="ref-images-sub">
+                    Visual aids to help understand the engineering context and variables.
+                </p>
+            </div>
+
+            <div class="ref-images-grid">
+                {% for img in ref_images %}
+                <div class="ref-img-card" onclick="openLightbox('{{ loop.index0 }}')">
+                    <div class="ref-img-wrap">
+                        <img src="{{ url_for('static', filename='uploads/' ~ img.filename) }}"
+                             alt="{{ img.caption or 'Reference image ' ~ loop.index }}"
+                             class="ref-img" loading="lazy">
+                        <div class="ref-img-overlay">
+                            <i data-lucide="zoom-in"></i>
+                        </div>
+                    </div>
+                    {% if img.caption %}
+                    <div class="ref-img-caption">{{ img.caption }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- ── LIGHTBOX ──────────────────────────────────────── -->
+        <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+            <div class="lightbox-inner">
+                <button class="lb-btn lb-prev" id="lb-prev" onclick="shiftLightbox(-1)">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+
+                <div class="lb-img-wrap">
+                    <img id="lb-img" src="" alt="Reference image">
+                    <div class="lb-caption" id="lb-caption"></div>
+                </div>
+
+                <button class="lb-btn lb-next" id="lb-next" onclick="shiftLightbox(1)">
+                    <i data-lucide="chevron-right"></i>
+                </button>
+
+                <button class="lb-close" onclick="closeLightbox()" title="Close">
+                    <i data-lucide="x"></i>
+                </button>
+
+                <div class="lb-counter" id="lb-counter"></div>
+            </div>
+        </div>
+
+        <script>
+            const REF_IMAGES = [
+                {% for img in ref_images %}
+                {
+                    src: "{{ url_for('static', filename='uploads/' ~ img.filename) }}",
+                    caption: "{{ img.caption | replace('"', '\\"') }}"
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ];
+
+            let currentLb = 0;
+
+            function openLightbox(idx) {
+                currentLb = parseInt(idx);
+                updateLightbox();
+                document.getElementById('lightbox').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeLightbox(e) {
+                if (!e || e.target === document.getElementById('lightbox') || e.target.classList.contains('lb-close') || e.target.closest('.lb-close')) {
+                    document.getElementById('lightbox').classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            }
+
+            function shiftLightbox(dir) {
+                currentLb = (currentLb + dir + REF_IMAGES.length) % REF_IMAGES.length;
+                updateLightbox();
+            }
+
+            function updateLightbox() {
+                const img = REF_IMAGES[currentLb];
+                document.getElementById('lb-img').src = img.src;
+                document.getElementById('lb-img').alt = img.caption || 'Reference image';
+                document.getElementById('lb-caption').textContent = img.caption;
+                document.getElementById('lb-counter').textContent = (currentLb + 1) + ' / ' + REF_IMAGES.length;
+                document.getElementById('lb-prev').style.display = REF_IMAGES.length > 1 ? '' : 'none';
+                document.getElementById('lb-next').style.display = REF_IMAGES.length > 1 ? '' : 'none';
+            }
+
+            // Keyboard nav
+            document.addEventListener('keydown', e => {
+                const lb = document.getElementById('lightbox');
+                if (!lb.classList.contains('active')) return;
+                if (e.key === 'Escape')      closeLightbox();
+                if (e.key === 'ArrowLeft')   shiftLightbox(-1);
+                if (e.key === 'ArrowRight')  shiftLightbox(1);
+            });
+        </script>
+        {% endif %}
+
+        <!-- ── REPORT MODAL (always present) ────────────────────── -->
+        <div class="report-modal" id="reportModal">
+            <div class="report-modal-content">
+                <div class="report-modal-header">
+                    <h3>Finalize Documentation</h3>
+                    <button type="button" class="close-modal" onclick="closeReportModal()">&times;</button>
+                </div>
+                <form id="report-form" method="POST" action="{{ url_for('generate_report', calc_id=calc.id) }}">
+                    <div class="report-modal-body">
+                        <p>Complete the report details to generate the official Atlas Copco design document.</p>
+                        <div class="calc-field">
+                            <label class="calc-label" for="designer_name">Engineer / Designer Name</label>
+                            <input type="text" name="designer_name" id="designer_name"
+                                   class="calc-input" placeholder="e.g. Atharva P." required>
+                            <span class="report-hint">This name will appear on the letterhead.</span>
+                        </div>
+                    </div>
+                    <div class="report-modal-footer">
+                        <button type="button" class="btn-reset" onclick="closeReportModal()">Cancel</button>
+                        <button type="submit" class="btn-calculate">
+                            Download PDF <i data-lucide="download"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            function openReportModal() {
+                document.getElementById('reportModal').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+            function closeReportModal() {
+                document.getElementById('reportModal').classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        </script>
+
+    </div><!-- /calc-page-container -->
+
+</div><!-- /calc-page -->
 {% endblock %}
