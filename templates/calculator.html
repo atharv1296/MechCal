@@ -36,16 +36,14 @@
                         </h2>
                         {% for i, inp in enumerate(config['inputs']) %}
                         <div class="calc-field">
-                            <label class="calc-label" for="input_{{ i }}">{{ inp['label'] }}</label>
+                            <label class="calc-label" for="input_{{ i }}">
+                                {{ inp['label'] }}{% if inp.get('unit') %} ({{ inp['unit'] }}){% endif %}
+                            </label>
                             <div class="input-wrap">
-                                <input type="number" step="any"
-                                       name="input_{{ i }}"
-                                       id="input_{{ i }}"
-                                       class="calc-input"
-                                       value="{{ form_vals.get('input_' ~ i, '') }}"
-                                       placeholder="Enter {{ inp['label'] }}"
-                                       required>
-                                <span class="input-unit">—</span>
+                                <input type="number" step="any" name="input_{{ i }}" id="input_{{ i }}"
+                                    class="calc-input" value="{{ form_vals.get('input_' ~ i, '') }}"
+                                    placeholder="Enter {{ inp['label'] }}" required>
+                                <span class="input-unit">{{ inp.get('unit') or '—' }}</span>
                             </div>
                         </div>
                         {% endfor %}
@@ -81,18 +79,20 @@
                             <select name="dropdown_{{ i }}" id="dropdown_{{ i }}" class="calc-select">
                                 <option value="">— Select {{ dd['label'] }} —</option>
                                 {% if dd.options %}
-                                    {% for opt in dd.options %}
-                                    <option value="{{ opt.value }}" {% if form_vals.get('dropdown_' ~ i) == opt.value|string %}selected{% endif %}>
-                                        {{ opt.label }}
-                                    </option>
-                                    {% endfor %}
+                                {% for opt in dd.options %}
+                                <option value="{{ opt.value }}" {% if form_vals.get('dropdown_' ~ i)==opt.value|string
+                                    %}selected{% endif %}>
+                                    {{ opt.label }}
+                                </option>
+                                {% endfor %}
                                 {% elif dd.items %}
-                                    {# Compatibility with old structure #}
-                                    {% for it in dd.items %}
-                                    <option value="{{ it }}" {% if form_vals.get('dropdown_' ~ i) == it|string %}selected{% endif %}>
-                                        {{ it }}
-                                    </option>
-                                    {% endfor %}
+                                {# Compatibility with old structure #}
+                                {% for it in dd.items %}
+                                <option value="{{ it }}" {% if form_vals.get('dropdown_' ~ i)==it|string %}selected{%
+                                    endif %}>
+                                    {{ it }}
+                                </option>
+                                {% endfor %}
                                 {% endif %}
                             </select>
                         </div>
@@ -117,53 +117,76 @@
                     </h2>
 
                     {% if results %}
-                        {% for r in results %}
-                        <div class="result-card {% if r.error %}result-error{% else %}result-ok{% endif %}">
-                            <div class="result-label">{{ r.label }}</div>
-                            {% if r.error %}
-                                <div class="error-val">
-                                    <i data-lucide="alert-circle" style="width:16px; vertical-align:middle;"></i>
-                                    Formula Error
-                                </div>
-                                <div class="result-formula error-msg">{{ r.error }}</div>
-                            {% else %}
-                                <div class="result-value">{{ r.value }}</div>
-                                <div class="result-formula">
-                                    Formula: <code>{{ r.formula }}</code>
-                                </div>
-                            {% endif %}
+                    {% for r in results %}
+                    <div class="result-card {% if r.error %}result-error{% else %}result-ok{% endif %}"
+                        style="position: relative;">
+                        <div class="result-label">
+                            {{ r.label }}
                         </div>
-                        {% endfor %}
+                        {% if not r.error %}
+                        <div style="position: absolute; top: 12px; right: 12px;">
+                            <select class="round-select" onchange="applyRounding(this)"
+                                style="font-size:0.75rem; padding:2px 4px; border-radius:4px; border:1px solid var(--border-light); background: #fff; cursor: pointer; color: #444;">
+                                <option value="none">Round: None</option>
+                                <option value="0">0 dec</option>
+                                <option value="1">1 dec</option>
+                                <option value="2">2 dec</option>
+                                <option value="3">3 dec</option>
+                                <option value="4">4 dec</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                        {% if r.error %}
+                        <div class="error-val">
+                            <i data-lucide="alert-circle" style="width:16px; vertical-align:middle;"></i>
+                            Formula Error
+                        </div>
+                        <div class="result-formula error-msg">{{ r.error }}</div>
+                        {% else %}
+                        <div class="result-value" data-raw-value="{{ r.value }}">
+                            {{ r.value }} <span class="result-unit"
+                                style="font-size: 1rem; color: #64748b; font-weight: 400;">{{ r.unit or '' }}</span>
+                        </div>
+                        <div class="result-formula">
+                            Formula: <code>{{ r.formula }}</code>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
 
-                        <div class="result-timestamp">
-                            <i data-lucide="check-circle-2"></i>
-                            Computed &amp; verified at {{ now }}
-                        </div>
+                    <div class="result-timestamp">
+                        <i data-lucide="check-circle-2"></i>
+                        Computed &amp; verified at {{ now }}
+                    </div>
 
-                        <!-- ── PDF REPORT ACTION ──────────────────────────────── -->
-                        <div class="report-action-wrap">
-                            <button type="button" class="btn-generate-pdf" onclick="openReportModal()">
-                                <i data-lucide="file-text"></i> Generate PDF Report
-                            </button>
-                            <p class="report-hint">Includes inputs, results, and reference images.</p>
-                        </div>
+                    <!-- ── PDF REPORT ACTION ──────────────────────────────── -->
+                    <div class="report-action-wrap">
+                        <button type="button" class="btn-generate-pdf" onclick="openReportModal()">
+                            <i data-lucide="file-text"></i> Generate PDF Report
+                        </button>
+                        <p class="report-hint">Includes inputs, results, and reference images.</p>
+                    </div>
 
                     {% else %}
-                        <!-- Placeholder slots -->
-                        {% if config.get('outputs') %}
-                            {% for out in config['outputs'] %}
-                            <div class="result-card result-pending">
-                                <div class="result-label">{{ out['label'] }}</div>
-                                <div class="result-value">—</div>
-                                <div class="result-formula">Formula: <code>{{ out['formula'] }}</code></div>
-                            </div>
-                            {% endfor %}
-                        {% endif %}
-
-                        <div class="results-placeholder">
-                            <i data-lucide="play-circle" style="width:44px; height:44px;"></i>
-                            <p>Provide inputs and click <strong>Compute Results</strong> to execute.</p>
+                    <!-- Placeholder slots -->
+                    {% if config.get('outputs') %}
+                    {% for out in config['outputs'] %}
+                    <div class="result-card result-pending">
+                        <div class="result-label">
+                            {{ out['label'] }}
                         </div>
+                        <div class="result-value">— <span class="result-unit"
+                                style="font-size: 1rem; color: #64748b; font-weight: 400;">{{ out.get('unit', '')
+                                }}</span></div>
+                        <div class="result-formula">Formula: <code>{{ out['formula'] }}</code></div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <div class="results-placeholder">
+                        <i data-lucide="play-circle" style="width:44px; height:44px;"></i>
+                        <p>Provide inputs and click <strong>Compute Results</strong> to execute.</p>
+                    </div>
                     {% endif %}
 
                 </div><!-- /outputs-panel -->
@@ -191,8 +214,7 @@
                 <div class="ref-img-card" onclick="openLightbox('{{ loop.index0 }}')">
                     <div class="ref-img-wrap">
                         <img src="{{ url_for('static', filename='uploads/' ~ img.filename) }}"
-                             alt="{{ img.caption or 'Reference image ' ~ loop.index }}"
-                             class="ref-img" loading="lazy">
+                            alt="{{ img.caption or 'Reference image ' ~ loop.index }}" class="ref-img" loading="lazy">
                         <div class="ref-img-overlay">
                             <i data-lucide="zoom-in"></i>
                         </div>
@@ -232,11 +254,11 @@
         <script>
             const REF_IMAGES = [
                 {% for img in ref_images %}
-                {
-                    src: "{{ url_for('static', filename='uploads/' ~ img.filename) }}",
+            {
+                src: "{{ url_for('static', filename='uploads/' ~ img.filename) }}",
                     caption: "{{ img.caption | replace('"', '\\"') }}"
-                }{% if not loop.last %},{% endif %}
-                {% endfor %}
+            } {% if not loop.last %}, {% endif %}
+            {% endfor %}
             ];
 
             let currentLb = 0;
@@ -274,12 +296,342 @@
             document.addEventListener('keydown', e => {
                 const lb = document.getElementById('lightbox');
                 if (!lb.classList.contains('active')) return;
-                if (e.key === 'Escape')      closeLightbox();
-                if (e.key === 'ArrowLeft')   shiftLightbox(-1);
-                if (e.key === 'ArrowRight')  shiftLightbox(1);
+                if (e.key === 'Escape') closeLightbox();
+                if (e.key === 'ArrowLeft') shiftLightbox(-1);
+                if (e.key === 'ArrowRight') shiftLightbox(1);
             });
         </script>
         {% endif %}
+
+        <!-- ── TABLE ANALYZER SECTION ────────────────────────────── -->
+        <div class="table-analyzer-section"
+            style="margin-top: 2rem; background: #fff; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            <div class="ref-images-header" style="margin-bottom: 1rem;">
+                <div class="ref-images-title">
+                    <i data-lucide="table"></i>
+                    <span>Data Table Analysis</span>
+                </div>
+                <p class="ref-images-sub">
+                    Paste a data table (e.g., from Excel) below to automatically find matching components based on your
+                    computed results.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                <!-- Left: Table Source -->
+                <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column;">
+                    <label class="calc-label">Data Table (TSV/Excel)</label>
+                    <div id="ta-paste-container">
+                        <textarea id="ta-paste-area" class="calc-input"
+                            style="height: 250px; font-family: monospace; font-size: 0.85rem; white-space: pre;"
+                            placeholder="Click here and paste Excel rows..."></textarea>
+                    </div>
+
+                    <div id="ta-preview-container"
+                        style="display: none; flex-direction: column; height: 250px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden;">
+                        <div
+                            style="background: #f8fafc; padding: 6px 10px; border-bottom: 1px solid #cbd5e1; display:flex; justify-content:space-between; align-items:center;">
+                            <span class="calc-label" style="margin:0; font-size:0.75rem;">Table Preview</span>
+                            <button type="button" class="btn-reset"
+                                style="padding: 2px 8px; font-size: 0.75rem; height: auto;"
+                                onclick="resetTablePaste()">Clear / Re-paste</button>
+                        </div>
+                        <div style="overflow: auto; flex: 1; background: #fff;">
+                            <style>
+                                .ta-preview-table {
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                    font-size: 0.75rem;
+                                }
+
+                                .ta-preview-table th,
+                                .ta-preview-table td {
+                                    border: 1px solid #e2e8f0;
+                                    padding: 4px 8px;
+                                    white-space: nowrap;
+                                    text-align: left;
+                                }
+
+                                .ta-preview-table th {
+                                    font-weight: 600;
+                                    color: #475569;
+                                    background: #f1f5f9;
+                                    position: sticky;
+                                    top: 0;
+                                    box-shadow: 0 1px 0 #e2e8f0;
+                                }
+                            </style>
+                            <table class="ta-preview-table" id="ta-preview-table">
+                                <thead id="ta-preview-head"></thead>
+                                <tbody id="ta-preview-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Controls -->
+                <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1rem;">
+
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label class="calc-label">1. Match Variable</label>
+                            <select id="ta-label-select" class="calc-select">
+                                <option value="">-- Select Label --</option>
+                                <optgroup label="Inputs & Constants">
+                                    {% for inp in config.get('inputs', []) %}
+                                    <option value="{{ inp['label'] }}">{{ inp['label'] }}</option>
+                                    {% endfor %}
+                                    {% for const in config.get('constants', []) %}
+                                    <option value="{{ const['label'] }}">{{ const['label'] }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="Calculated Outputs">
+                                    {% for out in config.get('outputs', []) %}
+                                    <option value="{{ out['label'] }}">{{ out['label'] }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <div style="flex: 1;">
+                            <label class="calc-label">2. Condition</label>
+                            <select id="ta-condition" class="calc-select">
+                                <option value=">">Greater Than (Table Value > Variable)</option>
+                                <option value="<">Less Than (Table Value < Variable)</option>
+                                <option value=">=">Greater/Equal (Table Value >= Variable)</option>
+                                <option value="<=">Less/Equal (Table Value <= Variable)</option>
+                                <option value="==">Exact Match (Table Value == Variable)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label class="calc-label">3. Target Column (from table)</label>
+                            <select id="ta-target-col" class="calc-select">
+                                <option value="">-- Paste data first --</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="calc-label">4. Result Column (to return)</label>
+                            <select id="ta-result-col" class="calc-select">
+                                <option value="">-- Paste data first --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: auto;">
+                        <button type="button" class="btn-calculate" style="width: 100%; padding: 0.75rem;"
+                            onclick="analyzeTable()">
+                            <i data-lucide="search"></i> Analyze Table Match
+                        </button>
+                    </div>
+
+                    <div id="ta-result-box"
+                        style="display: none; margin-top: 10px; padding: 1rem; border-radius: 6px; background: #f8fafc; border: 1px solid #cbd5e1;">
+                        <div
+                            style="font-size: 0.8rem; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">
+                            Analysis Result</div>
+                        <div id="ta-result-text" style="font-size: 1.1rem; font-weight: 600; color: #0f172a;"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const TA_VALUES = {
+                {% if config.get('inputs') %}
+            {% for i, inp in enumerate(config.get('inputs')) %}
+            "{{ inp['label'] }}": parseFloat("{{ form_vals.get('input_' ~ i, 0) }}") || 0,
+                {% endfor %}
+            {% endif %}
+
+            {% if config.get('constants') %}
+            {% for const in config.get('constants') %}
+            "{{ const['label'] }}": parseFloat("{{ const['value'] }}") || 0,
+                {% endfor %}
+            {% endif %}
+
+            {% if results %}
+            {% for r in results %}
+            {% if not r.error %}
+            "{{ r.label }}": parseFloat("{{ r.value }}") || 0,
+                {% endif %}
+            {% endfor %}
+            {% endif %}
+            };
+
+            let taParsedHeaders = [];
+            let taParsedRows = [];
+
+            function resetTablePaste() {
+                document.getElementById('ta-paste-area').value = '';
+                document.getElementById('ta-paste-container').style.display = 'block';
+                document.getElementById('ta-preview-container').style.display = 'none';
+
+                document.getElementById('ta-target-col').innerHTML = '<option value="">-- Paste data first --</option>';
+                document.getElementById('ta-result-col').innerHTML = '<option value="">-- Paste data first --</option>';
+                taParsedHeaders = [];
+                taParsedRows = [];
+                document.getElementById('ta-result-box').style.display = 'none';
+            }
+
+            document.getElementById('ta-paste-area').addEventListener('paste', function (e) {
+                // Give the browser 50ms to populate the textarea value
+                setTimeout(() => {
+                    const text = this.value.trim();
+                    if (!text) return;
+
+                    const lines = text.split('\n');
+                    if (lines.length < 2) return;
+
+                    const targetSelect = document.getElementById('ta-target-col');
+                    const resultSelect = document.getElementById('ta-result-col');
+                    targetSelect.innerHTML = '<option value="">-- Select Column --</option>';
+                    resultSelect.innerHTML = '<option value="">-- Select Column --</option>';
+
+                    taParsedHeaders = lines[0].split('\t').map(h => h.trim());
+                    taParsedRows = [];
+
+                    for (let i = 1; i < lines.length; i++) {
+                        const row = lines[i].split('\t').map(c => c.trim());
+                        if (row.length > 0 && row.join('') !== '') {
+                            taParsedRows.push(row);
+                        }
+                    }
+
+                    // Build table UI
+                    const thead = document.getElementById('ta-preview-head');
+                    const tbody = document.getElementById('ta-preview-body');
+                    thead.innerHTML = '';
+                    tbody.innerHTML = '';
+
+                    const trHead = document.createElement('tr');
+                    taParsedHeaders.forEach((header, index) => {
+                        const th = document.createElement('th');
+                        th.textContent = header || `Col ${index + 1}`;
+                        trHead.appendChild(th);
+
+                        const opt1 = document.createElement('option');
+                        opt1.value = index;
+                        opt1.textContent = header || `Col ${index + 1}`;
+                        targetSelect.appendChild(opt1);
+
+                        const opt2 = document.createElement('option');
+                        opt2.value = index;
+                        opt2.textContent = header || `Col ${index + 1}`;
+                        resultSelect.appendChild(opt2);
+                    });
+                    thead.appendChild(trHead);
+
+                    taParsedRows.forEach(row => {
+                        const tr = document.createElement('tr');
+                        for (let i = 0; i < taParsedHeaders.length; i++) {
+                            const td = document.createElement('td');
+                            td.textContent = row[i] || '';
+                            tr.appendChild(td);
+                        }
+                        tbody.appendChild(tr);
+                    });
+
+                    // Switch view
+                    document.getElementById('ta-paste-container').style.display = 'none';
+                    document.getElementById('ta-preview-container').style.display = 'flex';
+                }, 50);
+            });
+
+            function analyzeTable() {
+                const resBox = document.getElementById('ta-result-box');
+                const resText = document.getElementById('ta-result-text');
+
+                const labelStr = document.getElementById('ta-label-select').value;
+                const condition = document.getElementById('ta-condition').value;
+                const targetIdx = parseInt(document.getElementById('ta-target-col').value, 10);
+                const resultIdx = parseInt(document.getElementById('ta-result-col').value, 10);
+
+                resBox.style.display = 'block';
+
+                if (!labelStr) {
+                    resText.innerHTML = '<span style="color:#ef4444;"><i data-lucide="alert-circle" style="vertical-align:bottom;width:18px;"></i> Please select a Match Variable.</span>';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+                if (isNaN(targetIdx) || isNaN(resultIdx)) {
+                    resText.innerHTML = '<span style="color:#ef4444;"><i data-lucide="alert-circle" style="vertical-align:bottom;width:18px;"></i> Please select a target & result column. Did you paste the table?</span>';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                if (!(labelStr in TA_VALUES)) {
+                    resText.innerHTML = `<span style="color:#ef4444;"><i data-lucide="alert-triangle" style="vertical-align:bottom;width:18px;"></i> Value for <b>${labelStr}</b> is missing. Have you computed the results yet?</span>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                const compareVal = TA_VALUES[labelStr];
+
+                let bestMatchRow = null;
+                let bestMatchVal = null;
+                let matchedResult = "Not found";
+
+                for (let i = 0; i < taParsedRows.length; i++) {
+                    const row = taParsedRows[i];
+                    let tableRaw = row[targetIdx] || "";
+
+                    // Safely parse Excel numbers like "2,300" -> 2300
+                    let cleanRaw = tableRaw.replace(/\s/g, '');
+                    if (cleanRaw.includes(',') && !cleanRaw.includes('.')) {
+                        cleanRaw = cleanRaw.replace(',', '.');
+                    } else if (cleanRaw.includes(',') && cleanRaw.includes('.')) {
+                        cleanRaw = cleanRaw.replace(/,/g, '');
+                    }
+
+                    let tableVal = parseFloat(cleanRaw.replace(/[^0-9.-]/g, ''));
+
+                    if (isNaN(tableVal)) continue;
+
+                    let isMatch = false;
+
+                    if (condition === '>') isMatch = tableVal > compareVal;
+                    else if (condition === '<') isMatch = tableVal < compareVal;
+                    else if (condition === '>=') isMatch = tableVal >= compareVal;
+                    else if (condition === '<=') isMatch = tableVal <= compareVal;
+                    else if (condition === '==') isMatch = tableVal === compareVal;
+
+                    if (isMatch) {
+                        if (bestMatchVal === null) {
+                            bestMatchVal = tableVal;
+                            bestMatchRow = row;
+                        } else {
+                            // Find 'closest' match
+                            if ((condition === '>' || condition === '>=') && tableVal < bestMatchVal) {
+                                bestMatchVal = tableVal;
+                                bestMatchRow = row;
+                            } else if ((condition === '<' || condition === '<=') && tableVal > bestMatchVal) {
+                                bestMatchVal = tableVal;
+                                bestMatchRow = row;
+                            }
+                        }
+                    }
+                }
+
+                if (bestMatchRow !== null) {
+                    matchedResult = bestMatchRow[resultIdx] || "Empty Data";
+                    const summary = `Found: ${matchedResult} (Matched Value: ${bestMatchVal} against ${labelStr})`;
+                    resText.innerHTML = `<span style="color:#10b981;"><i data-lucide="check-circle" style="vertical-align:bottom;width:18px;"></i> Found: <b>${matchedResult}</b> <span style="font-size:0.8rem;color:#64748b;font-weight:400;margin-left:6px;">(Matched Value: ${bestMatchVal})</span></span>`;
+
+                    // Sync with report form
+                    const reportHidden = document.getElementById('ta-report-summary');
+                    if (reportHidden) reportHidden.value = summary;
+                } else {
+                    resText.innerHTML = `<span style="color:#f59e0b;"><i data-lucide="info" style="vertical-align:bottom;width:18px;"></i> Match not found (No row satisfies selection)</span>`;
+                    const reportHidden = document.getElementById('ta-report-summary');
+                    if (reportHidden) reportHidden.value = "";
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        </script>
 
         <!-- ── REPORT MODAL (always present) ────────────────────── -->
         <div class="report-modal" id="reportModal">
@@ -293,10 +645,11 @@
                         <p>Complete the report details to generate the official Atlas Copco design document.</p>
                         <div class="calc-field">
                             <label class="calc-label" for="designer_name">Engineer / Designer Name</label>
-                            <input type="text" name="designer_name" id="designer_name"
-                                   class="calc-input" placeholder="e.g. Atharva P." required>
+                            <input type="text" name="designer_name" id="designer_name" class="calc-input"
+                                placeholder="e.g. Atharva P." required>
                             <span class="report-hint">This name will appear on the letterhead.</span>
                         </div>
+                        <input type="hidden" name="ta_summary" id="ta-report-summary">
                     </div>
                     <div class="report-modal-footer">
                         <button type="button" class="btn-reset" onclick="closeReportModal()">Cancel</button>
@@ -322,4 +675,22 @@
     </div><!-- /calc-page-container -->
 
 </div><!-- /calc-page -->
+
+<script>
+    function applyRounding(selectElem) {
+        const card = selectElem.closest('.result-card');
+        const valElem = card.querySelector('.result-value');
+        if (!valElem) return;
+        const rawVal = parseFloat(valElem.getAttribute('data-raw-value'));
+        if (isNaN(rawVal)) return;
+
+        const roundTo = selectElem.value;
+        if (roundTo === 'none') {
+            valElem.textContent = rawVal;
+        } else {
+            const decimals = parseInt(roundTo, 10);
+            valElem.textContent = rawVal.toFixed(decimals);
+        }
+    }
+</script>
 {% endblock %}
