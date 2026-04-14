@@ -377,6 +377,8 @@
   color: var(--text-dark);
   margin-bottom: 1.75rem;
   flex: 1;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .calc-card-actions {

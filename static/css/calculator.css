@@ -44,6 +44,8 @@
   font-weight: 600;
   color: #ffffff;
   margin-bottom: 0.5rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .calc-subtitle {

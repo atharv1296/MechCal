@@ -110,6 +110,8 @@
   color: var(--ac-teal);
   font-size: 0.9rem;
   transition: color 0.2s;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .hist-calc a:hover {
