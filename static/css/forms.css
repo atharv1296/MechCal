@@ -307,14 +307,61 @@
   background: var(--bg-warm);
   border: 1px solid var(--border-light);
   padding: 1.5rem;
+  position: relative;
 }
 
-.output-item {
-  border-left: 3px solid var(--ac-gold);
+.field-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
 }
 
-.const-item {
-  border-left: 3px solid var(--ac-teal-mid);
+.btn-remove-field {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.btn-remove-field:hover {
+  color: #c0392b;
+}
+
+.btn-remove-field i {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-add-field {
+  background: #ffffff;
+  border: 1px solid var(--ac-teal);
+  color: var(--ac-teal);
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.btn-add-field:hover {
+  background: var(--ac-teal);
+  color: #ffffff;
+}
+
+.btn-add-field i {
+  width: 14px;
+  height: 14px;
 }
 
 /* Formula tip box */

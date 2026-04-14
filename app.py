@@ -274,7 +274,8 @@ class AtlasCopcoReport(FPDF):
         self.cell(0, 10, f"Atlas Copco Internal Document - Confidential", align="L")
         self.cell(0, 10, f"Page {self.page_no()} of {{nb}}", align="R", ln=1)
 
-def create_calc_pdf(calc_title, designer_name, inputs, outputs, image_paths):
+def create_calc_pdf(calc_title, designer_name, inputs, outputs, image_paths, ta_summary=None, unit_map=None):
+    if unit_map is None: unit_map = {}
     pdf = AtlasCopcoReport()
     pdf.alias_nb_pages()
     pdf.add_page()
@@ -311,7 +312,9 @@ def create_calc_pdf(calc_title, designer_name, inputs, outputs, image_paths):
     fill = False
     for label, val in inputs.items():
         pdf.set_fill_color(248, 250, 250) if fill else pdf.set_fill_color(255, 255, 255)
-        pdf.cell(120, 9, f"  {label}", fill=True)
+        unit = unit_map.get(label, "")
+        label_with_unit = f"  {label} ({unit})" if unit else f"  {label}"
+        pdf.cell(120, 9, label_with_unit, fill=True)
         pdf.set_font("helvetica", "B", 10)
         pdf.cell(70, 9, f"{val}", fill=True, align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         pdf.set_font("helvetica", "", 10)
@@ -337,8 +340,25 @@ def create_calc_pdf(calc_title, designer_name, inputs, outputs, image_paths):
         
         pdf.set_text_color(0, 75, 80)
         pdf.set_font("helvetica", "B", 18)
-        pdf.cell(0, 14, f"  {val}", border='BLR', fill=True, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        unit = unit_map.get(label, "")
+        val_with_unit = f"  {val} {unit}" if unit else f"  {val}"
+        pdf.cell(0, 14, val_with_unit, border='BLR', fill=True, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         pdf.ln(4)
+        
+    # ── DATA TABLE ANALYSIS ───────────────────────────────────────
+    if ta_summary:
+        pdf.ln(6)
+        pdf.set_fill_color(0, 150, 130) # Distinct teal/green
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font("helvetica", "B", 11)
+        pdf.cell(0, 10, "  3.0 DATA TABLE ANALYSIS MATCH", new_x=XPos.LMARGIN, new_y=YPos.NEXT, fill=True)
+        pdf.ln(4)
+        
+        pdf.set_fill_color(240, 250, 245)
+        pdf.set_text_color(10, 80, 60)
+        pdf.set_font("helvetica", "B", 12)
+        pdf.multi_cell(0, 12, f"  MATCH RESULT: {ta_summary}", border=1, fill=True, align="L")
+        pdf.ln(10)
         
     # ── REFERENCE IMAGES ──────────────────────────────────────────
     if image_paths:
@@ -346,7 +366,8 @@ def create_calc_pdf(calc_title, designer_name, inputs, outputs, image_paths):
         pdf.set_fill_color(220, 220, 220)
         pdf.set_text_color(50, 50, 50)
         pdf.set_font("helvetica", "B", 11)
-        pdf.cell(0, 10, "  3.0 REFERENCE SCHEMATICS & DIAGRAMS", new_x=XPos.LMARGIN, new_y=YPos.NEXT, fill=True)
+        section_idx = "4.0" if ta_summary else "3.0"
+        pdf.cell(0, 10, f"  {section_idx} REFERENCE SCHEMATICS & DIAGRAMS", new_x=XPos.LMARGIN, new_y=YPos.NEXT, fill=True)
         pdf.ln(10)
         
         for i, img_data in enumerate(image_paths):
@@ -429,10 +450,6 @@ def create_form():
     if request.method == 'POST':
         data = request.form
 
-        num_inputs    = int(data.get('num_inputs', 0))
-        num_outputs   = int(data.get('num_outputs', 0))
-        num_constants = int(data.get('num_constants', 0))
-        num_dropdowns = int(data.get('num_dropdowns', 0))
         title         = data.get('title', 'Calculator').strip()
 
         # Check for title uniqueness
@@ -441,12 +458,13 @@ def create_form():
             flash(f"A tool with the name '{title}' already exists. Please use a unique title.", "error")
             return render_template('create_form.html')
 
+        # DEFAULT COUNTS for dynamic setup
         config = {
             'title':         title,
-            'num_inputs':    num_inputs,
-            'num_outputs':   num_outputs,
-            'num_constants': num_constants,
-            'num_dropdowns': num_dropdowns,
+            'num_inputs':    1,
+            'num_outputs':   1,
+            'num_constants': 0,
+            'num_dropdowns': 0,
             'inputs': [], 'outputs': [], 'constants': [], 'dropdowns': [],
             'ref_images': []
         }
@@ -507,36 +525,49 @@ def setup_calculator(calc_id):
         data = request.form
         label_error = None
 
-        # 1. Collect all labels to check for global uniqueness
-        input_labels    = [data.get(f'input_label_{i}', f'Input {i+1}').strip() for i in range(config['num_inputs'])]
-        const_labels    = [data.get(f'const_label_{i}', f'Const {i+1}').strip() for i in range(config['num_constants'])]
-        output_labels   = [data.get(f'output_label_{i}', f'Output {i+1}').strip() for i in range(config['num_outputs'])]
-        dropdown_labels = [data.get(f'dropdown_label_{i}', f'Menu {i+1}').strip() for i in range(config['num_dropdowns'])]
+        # 1. Collect dynamic fields from form data
+        def get_dynamic_fields(prefix):
+            fields = []
+            i = 0
+            while f'{prefix}_label_{i}' in data:
+                label = data[f'{prefix}_label_{i}'].strip()
+                unit = data.get(f'{prefix}_unit_{i}', '').strip()
+                if prefix == 'input':
+                    fields.append({'label': label, 'unit': unit})
+                elif prefix == 'const':
+                    fields.append({'label': label, 'value': data.get(f'const_value_{i}', '0')})
+                elif prefix == 'output':
+                    fields.append({'label': label, 'formula': data.get(f'output_formula_{i}', '0'), 'unit': unit})
+                elif prefix == 'dropdown':
+                    items_raw = data.get(f'dropdown_items_{i}', '').strip()
+                    options = []
+                    for entry in items_raw.split(','):
+                        if not entry.strip(): continue
+                        if ':' in entry:
+                            lbl, val = entry.split(':', 1)
+                            options.append({'label': lbl.strip(), 'value': val.strip()})
+                        else:
+                            options.append({'label': entry.strip(), 'value': entry.strip()})
+                    fields.append({'label': label, 'options': options})
+                i += 1
+            return fields, i
+
+        inputs, num_inputs = get_dynamic_fields('input')
+        constants, num_constants = get_dynamic_fields('const')
+        outputs, num_outputs = get_dynamic_fields('output')
+        dropdowns, num_dropdowns = get_dynamic_fields('dropdown')
+
+        # Ensure minimal one input/output if new (already handled by defaults but good to be safe)
         
-        all_labels = input_labels + const_labels + output_labels + dropdown_labels
-        # 2. Build current preview from form data (to preserve values on error)
-        inputs = [{'label': l} for l in input_labels]
-        constants = []
-        for i, l in enumerate(const_labels):
-            constants.append({'label': l, 'value': data.get(f'const_value_{i}', '0')})
-        outputs = []
-        for i, l in enumerate(output_labels):
-            outputs.append({'label': l, 'formula': data.get(f'output_formula_{i}', '0')})
-        dropdowns = []
-        for i, l in enumerate(dropdown_labels):
-            items_raw = data.get(f'dropdown_items_{i}', '').strip()
-            options = []
-            for entry in items_raw.split(','):
-                if not entry.strip(): continue
-                if ':' in entry:
-                    lbl, val = entry.split(':', 1)
-                    options.append({'label': lbl.strip(), 'value': val.strip()})
-                else:
-                    options.append({'label': entry.strip(), 'value': entry.strip()})
-            dropdowns.append({'label': l, 'options': options})
+        all_labels = [f['label'] for f in inputs] + [f['label'] for f in constants] + \
+                     [f['label'] for f in outputs] + [f['label'] for f in dropdowns]
 
         preview_config = config.copy()
         preview_config.update({
+            'num_inputs': num_inputs,
+            'num_outputs': num_outputs,
+            'num_constants': num_constants,
+            'num_dropdowns': num_dropdowns,
             'inputs': inputs, 'constants': constants, 
             'outputs': outputs, 'dropdowns': dropdowns
         })
@@ -556,6 +587,10 @@ def setup_calculator(calc_id):
 
         # 5. Success! Update real config
         config.update({
+            'num_inputs': num_inputs,
+            'num_outputs': num_outputs,
+            'num_constants': num_constants,
+            'num_dropdowns': num_dropdowns,
             'inputs': inputs, 'constants': constants, 
             'outputs': outputs, 'dropdowns': dropdowns
         })
@@ -643,6 +678,7 @@ def use_calculator(calc_id):
         calc_error = False
         for i, out in enumerate(config.get('outputs', [])):
             formula = out['formula']
+            unit = out.get('unit', '')
             try:
                 # Replace label names with namespace values
                 safe_formula = formula
@@ -653,13 +689,13 @@ def use_calculator(calc_id):
                     raise ValueError("Unsafe characters in formula")
                 result = eval(safe_formula, {"__builtins__": {}}, namespace)
                 result_val = round(float(result), 6)
-                results.append({'label': out['label'], 'value': result_val, 'formula': formula, 'error': None})
+                results.append({'label': out['label'], 'value': result_val, 'formula': formula, 'error': None, 'unit': unit})
                 # Allow subsequent outputs to reference this output as op1, op2, etc.
                 namespace[f'op{i+1}'] = result_val
                 # Also allow referencing by the output's own label (e.g., 'shaft')
                 namespace[out['label']] = result_val
             except Exception as e:
-                results.append({'label': out['label'], 'value': None, 'formula': formula, 'error': str(e)})
+                results.append({'label': out['label'], 'value': None, 'formula': formula, 'error': str(e), 'unit': unit})
                 calc_error = True
 
         if not calc_error:
@@ -730,8 +766,18 @@ def generate_report(calc_id):
     inputs = json.loads(latest_result.inputs)
     outputs = json.loads(latest_result.outputs)
     image_paths = config.get('images', [])
+    ta_summary = request.form.get('ta_summary')
     
-    pdf_content = create_calc_pdf(calc.title, designer_name, inputs, outputs, image_paths)
+    # Build unit map from config
+    unit_map = {}
+    for inp in config.get('inputs', []):
+        unit_map[inp['label']] = inp.get('unit', '')
+    for out in config.get('outputs', []):
+        unit_map[out['label']] = out.get('unit', '')
+    for const in config.get('constants', []):
+        unit_map[const['label']] = const.get('unit', '')
+
+    pdf_content = create_calc_pdf(calc.title, designer_name, inputs, outputs, image_paths, ta_summary, unit_map)
     
     from flask import make_response
     response = make_response(pdf_content)

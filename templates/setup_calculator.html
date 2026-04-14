@@ -26,8 +26,8 @@
     <div class="form-page-container wide">
 
         <!-- NOTE: enctype required for file uploads -->
-        <form method="POST" action="{{ url_for('setup_calculator', calc_id=calc.id) }}"
-              class="setup-form" id="setupForm" enctype="multipart/form-data">
+        <form method="POST" action="{{ url_for('setup_calculator', calc_id=calc.id) }}" class="setup-form"
+            id="setupForm" enctype="multipart/form-data">
 
             {% if label_error %}
             <div class="field-error-notice">
@@ -37,321 +37,544 @@
             {% endif %}
 
             <!-- INPUT FIELDS -->
-            {% if config.num_inputs > 0 %}
             <div class="setup-section">
                 <div class="setup-section-header">
                     <span class="setup-section-icon"><i data-lucide="arrow-down-to-line"></i></span>
-                    <h2>Input Variables
-                        <span class="field-count-badge">{{ config.num_inputs }}</span>
-                    </h2>
+                    <h2>Input Variables</h2>
+                    <button type="button" class="btn-add-field" onclick="addField('input')">
+                        <i data-lucide="plus"></i> Add Input
+                    </button>
                 </div>
                 <p class="setup-section-desc">
                     Assign clear, unique labels to each input. These labels become variable names in your formulas.
                 </p>
-                <div class="fields-grid">
-                    {% for i in range(config.num_inputs) %}
+                <div class="fields-grid" id="input-container">
+                    {% set input_count = config.inputs|length if config.inputs else config.num_inputs %}
+                    {% for i in range(input_count) %}
                     {% set current_input = config.inputs[i] if config.inputs and i < config.inputs|length else {} %}
-                    <div class="field-item">
-                        <label class="form-label">Input {{ i + 1 }} — Label</label>
-                        <input type="text" name="input_label_{{ i }}" class="form-input"
-                               id="input-label-{{ i }}"
-                               value="{{ current_input.label if current_input else '' }}"
-                               placeholder="e.g. distance, load, shaft_dia" required maxlength="50">
-                        <span class="form-hint">Use underscores instead of spaces. Labels are case-sensitive.</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- CONSTANT FIELDS -->
-            {% if config.num_constants > 0 %}
-            <div class="setup-section">
-                <div class="setup-section-header">
-                    <span class="setup-section-icon"><i data-lucide="lock"></i></span>
-                    <h2>System Constants
-                        <span class="field-count-badge">{{ config.num_constants }}</span>
-                    </h2>
-                </div>
-                <p class="setup-section-desc">
-                    Define fixed numeric values (e.g. gravity, material constants) that remain static across all calculations.
-                </p>
-                <div class="fields-grid two-col">
-                    {% for i in range(config.num_constants) %}
-                    {% set current_const = config.constants[i] if config.constants and i < config.constants|length else {} %}
-                    <div class="field-item const-item">
-                        <label class="form-label">Constant {{ i + 1 }} — Label</label>
-                        <input type="text" name="const_label_{{ i }}" class="form-input"
-                               id="const-label-{{ i }}"
-                               value="{{ current_const.label if current_const else '' }}"
-                               placeholder="e.g. grav, pi_factor, Ks" required maxlength="50">
-                        <label class="form-label" style="margin-top:1rem;">Value</label>
-                        <input type="number" step="any" name="const_value_{{ i }}" class="form-input"
-                               id="const-value-{{ i }}"
-                               value="{{ current_const.value if current_const else '' }}"
-                               placeholder="e.g. 9.81, 3.14159, 1.38" required>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- DROPDOWN FIELDS -->
-            {% if config.num_dropdowns > 0 %}
-            <div class="setup-section">
-                <div class="setup-section-header">
-                    <span class="setup-section-icon"><i data-lucide="list"></i></span>
-                    <h2>Selection Menus
-                        <span class="field-count-badge">{{ config.num_dropdowns }}</span>
-                    </h2>
-                </div>
-                <p class="setup-section-desc">
-                    Define labels and comma-separated options for user selection menus.
-                </p>
-                <div class="fields-grid">
-                    {% for i in range(config.num_dropdowns) %}
-                    {% set current_dd = config.dropdowns[i] if config.dropdowns and i < config.dropdowns|length else {} %}
-                    <div class="field-item">
-                        <label class="form-label">Menu {{ i + 1 }} — Label</label>
-                        <input type="text" name="dropdown_label_{{ i }}" class="form-input"
-                               id="dropdown-label-{{ i }}"
-                               value="{{ current_dd.label if current_dd else '' }}"
-                               placeholder="e.g. Load Type, Material Grade" required maxlength="80">
-                        <label class="form-label" style="margin-top:1rem;">
-                            Available Options <span class="form-hint" style="display:inline;">(comma-separated)</span>
-                        </label>
-                        <input type="text" name="dropdown_items_{{ i }}" class="form-input"
-                               id="dropdown-items-{{ i }}"
-                               value="{% if current_dd %}{% if current_dd.options %}{% for opt in current_dd.options %}{{ opt.label }}{% if not loop.last %}, {% endif %}{% endfor %}{% elif current_dd['items'] is defined %}{{ current_dd['items'] | join(', ') }}{% endif %}{% endif %}"
-                               placeholder="e.g. Sudden Load, Gradual Load, Impact Load" required>
-                        <span class="form-hint">Each entry becomes a selectable item in the tool.</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- OUTPUT / FORMULA FIELDS -->
-            {% if config.num_outputs > 0 %}
-            <div class="setup-section">
-                <div class="setup-section-header">
-                    <span class="setup-section-icon"><i data-lucide="arrow-up-from-line"></i></span>
-                    <h2>Output Variables &amp; Formulas
-                        <span class="field-count-badge">{{ config.num_outputs }}</span>
-                    </h2>
-                </div>
-                <p class="setup-section-desc">
-                    Write mathematical expressions using the variable labels defined above.
-                </p>
-
-                <div class="formula-tip-box">
-                    <p><strong><i data-lucide="lightbulb"></i> Formula Guide:</strong></p>
-                    <p>Direct Labels: <code>(distance * load) + 9.81</code></p>
-                    <p>Refer to previous results: <code>op1 * op2</code> (where op1 is Output 1)</p>
-                    <p>Also reference by output label: <code>shaft + shaft</code></p>
-
-                    <div class="fn-guide-grid">
-                        <div class="fn-group">
-                            <span class="fn-group-title">📊 Statistical</span>
-                            <code>SUM(a,b,c)</code>
-                            <code>AVERAGE(a,b,c)</code>
-                            <code>MIN(a,b,c)</code>
-                            <code>MAX(a,b,c)</code>
-                            <code>COUNT(a,b,c)</code>
-                            <code>MEDIAN(a,b,c)</code>
-                            <code>MODE(a,b,c)</code>
-                            <code>STDEV(a,b,c)</code>
-                            <code>VAR(a,b,c)</code>
-                            <code>PRODUCT(a,b,c)</code>
-                            <code>LARGE(a,b,c, k)</code>
-                            <code>SMALL(a,b,c, k)</code>
+                        <div class="field-item">
+                        <div class="field-item-header">
+                            <label class="form-label">Input <span class="index">{{ i + 1 }}</span> — Label</label>
+                            {% if i > 0 %}
+                            <button type="button" class="btn-remove-field" onclick="removeField(this, 'input')">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                            {% endif %}
                         </div>
-                        <div class="fn-group">
-                            <span class="fn-group-title">🧠 Logical</span>
-                            <code>IF(cond, t, f)</code>
-                            <code>IFS(c1,v1, c2,v2)</code>
-                            <code>AND(a, b)</code>
-                            <code>OR(a, b)</code>
-                            <code>NOT(a)</code>
-                        </div>
-                        <div class="fn-group">
-                            <span class="fn-group-title">🔢 Math</span>
-                            <code>ABS(x)</code>
-                            <code>SQRT(x)</code>
-                            <code>POWER(x, n)</code>
-                            <code>MOD(x, y)</code>
-                            <code>SIGN(x)</code>
-                            <code>INT(x)</code>
-                            <code>GCD(a, b)</code>
-                            <code>LCM(a, b)</code>
-                            <code>CLAMP(x, lo, hi)</code>
-                            <code>HYPOT(a, b)</code>
-                            <code>FACT(n)</code>
-                        </div>
-                        <div class="fn-group">
-                            <span class="fn-group-title">🔁 Rounding</span>
-                            <code>ROUND(x, n)</code>
-                            <code>ROUNDUP(x, n)</code>
-                            <code>ROUNDDOWN(x, n)</code>
-                            <code>CEILING(x, s)</code>
-                            <code>FLOOR(x, s)</code>
-                            <code>TRUNC(x)</code>
-                        </div>
-                        <div class="fn-group">
-                            <span class="fn-group-title">📐 Trigonometry</span>
-                            <code>SIN(x)</code> <code>COS(x)</code>
-                            <code>TAN(x)</code> <code>ASIN(x)</code>
-                            <code>ACOS(x)</code><code>ATAN(x)</code>
-                            <code>ATAN2(y,x)</code>
-                            <code>SINH(x)</code><code>COSH(x)</code>
-                            <code>TANH(x)</code>
-                            <code>DEGREES(x)</code>
-                            <code>RADIANS(x)</code>
-                        </div>
-                        <div class="fn-group">
-                            <span class="fn-group-title">📈 Log / Exp</span>
-                            <code>LOG(x)</code>
-                            <code>LOG(x, base)</code>
-                            <code>LOG10(x)</code>
-                            <code>LOG2(x)</code>
-                            <code>EXP(x)</code>
-                            <code>LOG1P(x)</code>
-                            <code>EXPM1(x)</code>
-                        </div>
-                        <div class="fn-group">
-                            <span class="fn-group-title">⚙️ Other</span>
-                            <code>pi</code> &nbsp;<code>e</code>
-                            <code>RAND()</code>
-                            <code>RANDBETWEEN(lo,hi)</code>
-                        </div>
-                    </div>
-                    <p style="margin-top:0.75rem; font-size:0.78rem; color:var(--text-muted);">
-                        All functions work in both <strong>UPPERCASE</strong> (Excel-style) and <strong>lowercase</strong>.
-                    </p>
-                </div>
-
-                <style>
-                .fn-guide-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-                    gap: 12px;
-                    margin-top: 0.75rem;
-                }
-                .fn-group {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 4px;
-                }
-                .fn-group-title {
-                    font-size: 0.72rem;
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    letter-spacing: 0.06em;
-                    color: var(--ac-teal);
-                    margin-bottom: 4px;
-                    border-bottom: 1px solid var(--border-light);
-                    padding-bottom: 3px;
-                }
-                .fn-group code {
-                    font-size: 0.75rem;
-                    background: rgba(0,75,80,0.06);
-                    padding: 2px 6px;
-                    color: var(--ac-teal-dark, #003840);
-                    border-radius: 2px;
-                    display: inline-block;
-                }
-                </style>
-
-                <div class="fields-grid">
-                    {% for i in range(config.num_outputs) %}
-                    {% set current_out = config.outputs[i] if config.outputs and i < config.outputs|length else {} %}
-                    <div class="field-item output-item">
-                        <label class="form-label">Output {{ i + 1 }} — Label</label>
-                        <input type="text" name="output_label_{{ i }}" class="form-input"
-                               id="output-label-{{ i }}"
-                               value="{{ current_out.label if current_out else '' }}"
-                               placeholder="e.g. Shaft Diameter, Safety Factor" required maxlength="80">
-                        <label class="form-label" style="margin-top:1rem;">Formula Logic</label>
-                        <input type="text" name="output_formula_{{ i }}" class="form-input mono"
-                               id="output-formula-{{ i }}"
-                               value="{{ current_out.formula if current_out else '' }}"
-                               placeholder="e.g. (distance * load) / grav" required>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- ── REFERENCE IMAGES ─────────────────────────────────────── -->
-            <div class="setup-section img-upload-section">
-                <div class="setup-section-header">
-                    <span class="setup-section-icon"><i data-lucide="image"></i></span>
-                    <h2>Reference Images
-                        <span class="field-count-badge" id="img-count-badge">0</span>
-                    </h2>
-                </div>
-                <p class="setup-section-desc">
-                    Attach diagrams, schematics, or charts. These will display on the
-                    calculator page to guide users through the computation.
-                    <br>Accepted: JPG, PNG, GIF, WebP, SVG · Max 16 MB each.
-                </p>
-
-                {% set existing = config.get('images', []) %}
-                {% if existing %}
-                <!-- Existing images already saved -->
-                <div class="existing-images-wrap">
-                    <div class="existing-images-label">
-                        <i data-lucide="check-circle-2"></i> Saved Reference Images
-                    </div>
-                    <div class="existing-images-grid">
-                        {% for img in existing %}
-                        <div class="existing-img-card">
-                            <img src="{{ url_for('static', filename='uploads/' ~ img.filename) }}"
-                                 alt="{{ img.caption or 'Reference image' }}"
-                                 class="existing-img-thumb">
-                            <div class="existing-img-info">
-                                <span class="existing-img-caption">
-                                    {{ img.caption if img.caption else 'No caption' }}
-                                </span>
-                                <form method="POST"
-                                      action="{{ url_for('delete_image', calc_id=calc.id, img_index=loop.index0) }}"
-                                      onsubmit="return confirm('Remove this image?');">
-                                    <button type="submit" class="btn-img-delete" title="Remove image">
-                                        <i data-lucide="trash-2"></i>
-                                    </button>
-                                </form>
+                        <div style="display:flex; gap:10px; align-items: flex-start;">
+                            <div style="flex:2;">
+                                <input type="text" name="input_label_{{ i }}" class="form-input"
+                                    id="input-label-{{ i }}" value="{{ current_input.label if current_input else '' }}"
+                                    placeholder="e.g. distance, load, shaft_dia" required maxlength="50">
+                            </div>
+                            <div style="flex:1;">
+                                <select name="input_unit_{{ i }}" class="form-input" id="input-unit-{{ i }}">
+                                    <option value="">Unit (None)</option>
+                                    <optgroup label="Length">
+                                        <option value="m">m</option>
+                                        <option value="mm">mm</option>
+                                        <option value="cm">cm</option>
+                                        <option value="in">in</option>
+                                        <option value="ft">ft</option>
+                                    </optgroup>
+                                    <optgroup label="Area & Volume">
+                                        <option value="m^2">m^2</option>
+                                        <option value="mm^2">mm^2</option>
+                                        <option value="cm^2">cm^2</option>
+                                        <option value="m^3">m^3</option>
+                                    </optgroup>
+                                    <optgroup label="Mass/Weight">
+                                        <option value="kg">kg</option>
+                                        <option value="g">g</option>
+                                        <option value="lb">lb</option>
+                                    </optgroup>
+                                    <optgroup label="Force/Pressure">
+                                        <option value="N">N</option>
+                                        <option value="kN">kN</option>
+                                        <option value="lbf">lbf</option>
+                                        <option value="Pa">Pa</option>
+                                        <option value="kPa">kPa</option>
+                                        <option value="MPa">MPa</option>
+                                        <option value="psi">psi</option>
+                                        <option value="N/m^2">N/m^2</option>
+                                    </optgroup>
+                                    <optgroup label="Energy/Power">
+                                        <option value="J">J</option>
+                                        <option value="kJ">kJ</option>
+                                        <option value="W">W</option>
+                                        <option value="kW">kW</option>
+                                        <option value="HP">HP</option>
+                                    </optgroup>
+                                    <optgroup label="Speed">
+                                        <option value="m/s">m/s</option>
+                                        <option value="km/h">km/h</option>
+                                        <option value="RPM">RPM</option>
+                                        <option value="rad/s">rad/s</option>
+                                    </optgroup>
+                                    <optgroup label="Temperature">
+                                        <option value="°C">°C</option>
+                                        <option value="°F">°F</option>
+                                        <option value="K">K</option>
+                                    </optgroup>
+                                    <optgroup label="Other">
+                                        <option value="%">%</option>
+                                        <option value="deg">deg</option>
+                                        <option value="rad">rad</option>
+                                    </optgroup>
+                                </select>
+                                <script>document.getElementById('input-unit-{{ i }}').value = "{{ current_input.get('unit', '') if current_input else '' }}";</script>
                             </div>
                         </div>
-                        {% endfor %}
-                    </div>
+                        <span class="form-hint">Use underscores instead of spaces. Labels are case-sensitive.</span>
                 </div>
-                {% endif %}
-
-                <!-- Dynamic image upload slots -->
-                <div id="img-slots-container"></div>
-
-                <button type="button" class="btn-add-image" id="add-image-btn"
-                        onclick="addImageSlot()">
-                    <i data-lucide="plus-circle"></i> Add Reference Image
-                </button>
+                {% endfor %}
             </div>
-
-            <!-- Actions -->
-            <div class="form-actions">
-                <a href="{{ url_for('index') }}" class="btn-ghost-dark" id="setup-back-btn">
-                    Back to Home
-                </a>
-                <button type="submit" class="btn-primary lg" id="setup-finalize-btn">
-                    Finalize Tool <i data-lucide="check-circle" style="width:18px;height:18px;"></i>
-                </button>
-            </div>
-
-        </form>
     </div>
+
+    <!-- CONSTANT FIELDS -->
+    <div class="setup-section">
+        <div class="setup-section-header">
+            <span class="setup-section-icon"><i data-lucide="lock"></i></span>
+            <h2>System Constants</h2>
+            <button type="button" class="btn-add-field" onclick="addField('const')">
+                <i data-lucide="plus"></i> Add Constant
+            </button>
+        </div>
+        <p class="setup-section-desc">
+            Define fixed numeric values (e.g. gravity, material constants) that remain static across all calculations.
+        </p>
+        <div class="fields-grid two-col" id="const-container">
+            {% set const_count = config.constants|length if config.constants else config.num_constants %}
+            {% for i in range(const_count) %}
+            {% set current_const = config.constants[i] if config.constants and i < config.constants|length else {} %}
+                <div class="field-item">
+                <div class="field-item-header">
+                    <label class="form-label">Constant <span class="index">{{ i + 1 }}</span> — Label</label>
+                    <button type="button" class="btn-remove-field" onclick="removeField(this, 'const')">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+                <input type="text" name="const_label_{{ i }}" class="form-input" id="const-label-{{ i }}"
+                    value="{{ current_const.label if current_const else '' }}" placeholder="e.g. grav, pi_factor, Ks"
+                    required maxlength="50">
+                <label class="form-label" style="margin-top:1rem;">Value</label>
+                <input type="number" step="any" name="const_value_{{ i }}" class="form-input" id="const-value-{{ i }}"
+                    value="{{ current_const.value if current_const else '' }}" placeholder="e.g. 9.81, 3.14159, 1.38"
+                    required>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- DROPDOWN FIELDS -->
+<div class="setup-section">
+    <div class="setup-section-header">
+        <span class="setup-section-icon"><i data-lucide="list"></i></span>
+        <h2>Selection Menus</h2>
+        <button type="button" class="btn-add-field" onclick="addField('dropdown')">
+            <i data-lucide="plus"></i> Add Dropdown
+        </button>
+    </div>
+    <p class="setup-section-desc">
+        Define labels and comma-separated options for user selection menus.
+    </p>
+    <div class="fields-grid" id="dropdown-container">
+        {% set dd_count = config.dropdowns|length if config.dropdowns else config.num_dropdowns %}
+        {% for i in range(dd_count) %}
+        {% set current_dd = config.dropdowns[i] if config.dropdowns and i < config.dropdowns|length else {} %} <div
+            class="field-item">
+            <div class="field-item-header">
+                <label class="form-label">Menu <span class="index">{{ i + 1 }}</span> — Label</label>
+                <button type="button" class="btn-remove-field" onclick="removeField(this, 'dropdown')">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+            <input type="text" name="dropdown_label_{{ i }}" class="form-input" id="dropdown-label-{{ i }}"
+                value="{{ current_dd.label if current_dd else '' }}" placeholder="e.g. Load Type, Material Grade"
+                required maxlength="80">
+            <label class="form-label" style="margin-top:1rem;">
+                Available Options <span class="form-hint" style="display:inline;">(comma-separated)</span>
+            </label>
+            <input type="text" name="dropdown_items_{{ i }}" class="form-input" id="dropdown-items-{{ i }}"
+                value="{% if current_dd %}{% if current_dd.options %}{% for opt in current_dd.options %}{{ opt.label }}{% if not loop.last %}, {% endif %}{% endfor %}{% elif current_dd['items'] is defined %}{{ current_dd['items'] | join(', ') }}{% endif %}{% endif %}"
+                placeholder="e.g. Sudden Load, Gradual Load, Impact Load" required>
+            <span class="form-hint">Each entry becomes a selectable item in the tool.</span>
+    </div>
+    {% endfor %}
+</div>
+</div>
+
+<!-- OUTPUT / FORMULA FIELDS -->
+<div class="setup-section">
+    <div class="setup-section-header">
+        <span class="setup-section-icon"><i data-lucide="arrow-up-from-line"></i></span>
+        <h2>Output Variables &amp; Formulas</h2>
+        <button type="button" class="btn-add-field" onclick="addField('output')">
+            <i data-lucide="plus"></i> Add Output
+        </button>
+    </div>
+    <p class="setup-section-desc">
+        Write mathematical expressions using the variable labels defined above.
+    </p>
+
+    <div class="formula-tip-box">
+        <p><strong><i data-lucide="lightbulb"></i> Formula Guide:</strong></p>
+        <p>Direct Labels: <code>(distance * load) + 9.81</code></p>
+        <p>Refer to previous results: <code>op1 * op2</code> (where op1 is Output 1)</p>
+        <p>Also reference by output label: <code>shaft + shaft</code></p>
+
+        <div class="fn-guide-grid">
+            <div class="fn-group">
+                <span class="fn-group-title">Statistical</span>
+                <code>SUM()</code> <code>AVG()</code> <code>MIN()</code> <code>MAX()</code> <code>COUNT()</code>
+            </div>
+            <div class="fn-group">
+                <span class="fn-group-title">Logical</span>
+                <code>IF()</code> <code>IFS()</code> <code>AND()</code> <code>OR()</code> <code>NOT()</code>
+            </div>
+            <div class="fn-group">
+                <span class="fn-group-title">Math</span>
+                <code>ABS()</code> <code>SQRT()</code> <code>POWER()</code> <code>MOD()</code> <code>GCD()</code>
+            </div>
+            <div class="fn-group">
+                <span class="fn-group-title">Rounding</span>
+                <code>ROUND()</code> <code>CEILING()</code> <code>FLOOR()</code>
+            </div>
+        </div>
+        <p style="margin-top:0.75rem; font-size:0.78rem; opacity:0.8;">
+            Autocomplete is available as you type. All Excel-style functions are supported.
+        </p>
+    </div>
+
+    <style>
+        .fn-guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            margin-top: 0.75rem;
+        }
+
+        .fn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .fn-group-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ac-teal);
+            margin-bottom: 4px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 3px;
+        }
+
+        .fn-group code {
+            font-size: 0.75rem;
+            background: rgba(0, 75, 80, 0.06);
+            padding: 2px 6px;
+            color: var(--ac-teal-dark, #003840);
+            border-radius: 2px;
+            display: inline-block;
+        }
+    </style>
+
+    <div class="fields-grid" id="output-container">
+        {% set output_count = config.outputs|length if config.outputs else config.num_outputs %}
+        {% for i in range(output_count) %}
+        {% set current_out = config.outputs[i] if config.outputs and i < config.outputs|length else {} %} <div
+            class="field-item">
+            <div class="field-item-header">
+                <label class="form-label">Output <span class="index">{{ i + 1 }}</span> — Label</label>
+                {% if i > 0 %}
+                <button type="button" class="btn-remove-field" onclick="removeField(this, 'output')">
+                    <i data-lucide="trash-2"></i>
+                </button>
+                {% endif %}
+            </div>
+            <div style="display:flex; gap:10px; align-items: flex-start;">
+                <div style="flex:2;">
+                    <input type="text" name="output_label_{{ i }}" class="form-input" id="output-label-{{ i }}"
+                        value="{{ current_out.label if current_out else '' }}"
+                        placeholder="e.g. Shaft Diameter, Safety Factor" required maxlength="80">
+                </div>
+                <div style="flex:1;">
+                    <select name="output_unit_{{ i }}" class="form-input" id="output-unit-{{ i }}">
+                        <option value="">Unit (None)</option>
+                        <optgroup label="Length">
+                            <option value="m">m</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                            <option value="in">in</option>
+                            <option value="ft">ft</option>
+                        </optgroup>
+                        <optgroup label="Area & Volume">
+                            <option value="m^2">m^2</option>
+                            <option value="mm^2">mm^2</option>
+                            <option value="cm^2">cm^2</option>
+                            <option value="m^3">m^3</option>
+                        </optgroup>
+                        <optgroup label="Mass/Weight">
+                            <option value="kg">kg</option>
+                            <option value="g">g</option>
+                            <option value="lb">lb</option>
+                        </optgroup>
+                        <optgroup label="Force/Pressure">
+                            <option value="N">N</option>
+                            <option value="kN">kN</option>
+                            <option value="lbf">lbf</option>
+                            <option value="Pa">Pa</option>
+                            <option value="kPa">kPa</option>
+                            <option value="MPa">MPa</option>
+                            <option value="psi">psi</option>
+                            <option value="N/m^2">N/m^2</option>
+                        </optgroup>
+                        <optgroup label="Energy/Power">
+                            <option value="J">J</option>
+                            <option value="kJ">kJ</option>
+                            <option value="W">W</option>
+                            <option value="kW">kW</option>
+                            <option value="HP">HP</option>
+                        </optgroup>
+                        <optgroup label="Speed">
+                            <option value="m/s">m/s</option>
+                            <option value="km/h">km/h</option>
+                            <option value="RPM">RPM</option>
+                            <option value="rad/s">rad/s</option>
+                        </optgroup>
+                        <optgroup label="Temperature">
+                            <option value="°C">°C</option>
+                            <option value="°F">°F</option>
+                            <option value="K">K</option>
+                        </optgroup>
+                        <optgroup label="Other">
+                            <option value="%">%</option>
+                            <option value="deg">deg</option>
+                            <option value="rad">rad</option>
+                        </optgroup>
+                    </select>
+                    <script>document.getElementById('output-unit-{{ i }}').value = "{{ current_out.get('unit', '') if current_out else '' }}";</script>
+                </div>
+            </div>
+            <label class="form-label" style="margin-top:1rem;">Formula Logic</label>
+            <input type="text" name="output_formula_{{ i }}" class="form-input mono" id="output-formula-{{ i }}"
+                value="{{ current_out.formula if current_out else '' }}" placeholder="e.g. (distance * load) / grav"
+                required>
+    </div>
+    {% endfor %}
+</div>
+</div>
+
+<!-- ── REFERENCE IMAGES ─────────────────────────────────────── -->
+<div class="setup-section img-upload-section">
+    <div class="setup-section-header">
+        <span class="setup-section-icon"><i data-lucide="image"></i></span>
+        <h2>Reference Images
+            <span class="field-count-badge" id="img-count-badge">0</span>
+        </h2>
+    </div>
+    <p class="setup-section-desc">
+        Attach diagrams, schematics, or charts. These will display on the
+        calculator page to guide users through the computation.
+        <br>Accepted: JPG, PNG, GIF, WebP, SVG · Max 16 MB each.
+    </p>
+
+    {% set existing = config.get('images', []) %}
+    {% if existing %}
+    <!-- Existing images already saved -->
+    <div class="existing-images-wrap">
+        <div class="existing-images-label">
+            <i data-lucide="check-circle-2"></i> Saved Reference Images
+        </div>
+        <div class="existing-images-grid">
+            {% for img in existing %}
+            <div class="existing-img-card">
+                <img src="{{ url_for('static', filename='uploads/' ~ img.filename) }}"
+                    alt="{{ img.caption or 'Reference image' }}" class="existing-img-thumb">
+                <div class="existing-img-info">
+                    <span class="existing-img-caption">
+                        {{ img.caption if img.caption else 'No caption' }}
+                    </span>
+                    <form method="POST" action="{{ url_for('delete_image', calc_id=calc.id, img_index=loop.index0) }}"
+                        onsubmit="return confirm('Remove this image?');">
+                        <button type="submit" class="btn-img-delete" title="Remove image">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Dynamic image upload slots -->
+    <div id="img-slots-container"></div>
+
+    <button type="button" class="btn-add-image" id="add-image-btn" onclick="addImageSlot()">
+        <i data-lucide="plus-circle"></i> Add Reference Image
+    </button>
+</div>
+
+<!-- Actions -->
+<div class="form-actions">
+    <a href="{{ url_for('index') }}" class="btn-ghost-dark" id="setup-back-btn">
+        Back to Home
+    </a>
+    <button type="submit" class="btn-primary lg" id="setup-finalize-btn">
+        Finalize Tool <i data-lucide="check-circle" style="width:18px;height:18px;"></i>
+    </button>
+</div>
+
+</form>
+</div>
 
 </div>
 
 <script>
+    // ── DYNAMIC FIELD MANAGEMENT ──────────────────────────────
+    function addField(type) {
+        const container = document.getElementById(type + '-container');
+        const index = container.children.length;
+        const div = document.createElement('div');
+        div.className = 'field-item';
+
+        let html = '';
+        const unitOptionsHTML = `
+            <option value="">Unit (None)</option>
+            <optgroup label="Length"><option value="m">m</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ft">ft</option></optgroup>
+            <optgroup label="Area & Volume"><option value="m^2">m^2</option><option value="mm^2">mm^2</option><option value="cm^2">cm^2</option><option value="m^3">m^3</option></optgroup>
+            <optgroup label="Mass/Weight"><option value="kg">kg</option><option value="g">g</option><option value="lb">lb</option></optgroup>
+            <optgroup label="Force/Pressure"><option value="N">N</option><option value="kN">kN</option><option value="lbf">lbf</option><option value="Pa">Pa</option><option value="kPa">kPa</option><option value="MPa">MPa</option><option value="psi">psi</option><option value="N/m^2">N/m^2</option></optgroup>
+            <optgroup label="Energy/Power"><option value="J">J</option><option value="kJ">kJ</option><option value="W">W</option><option value="kW">kW</option><option value="HP">HP</option></optgroup>
+            <optgroup label="Speed"><option value="m/s">m/s</option><option value="km/h">km/h</option><option value="RPM">RPM</option><option value="rad/s">rad/s</option></optgroup>
+            <optgroup label="Temperature"><option value="°C">°C</option><option value="°F">°F</option><option value="K">K</option></optgroup>
+            <optgroup label="Other"><option value="%">%</option><option value="deg">deg</option><option value="rad">rad</option></optgroup>
+        `;
+
+        if (type === 'input') {
+            html = `
+                <div class="field-item-header">
+                    <label class="form-label">Input <span class="index">${index + 1}</span> — Label</label>
+                    <button type="button" class="btn-remove-field" onclick="removeField(this, 'input')">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+                <div style="display:flex; gap:10px; align-items: flex-start;">
+                    <div style="flex:2;">
+                        <input type="text" name="input_label_${index}" class="form-input" 
+                               id="input-label-${index}" placeholder="e.g. distance, load" required maxlength="50">
+                    </div>
+                    <div style="flex:1;">
+                        <select name="input_unit_${index}" class="form-input" id="input-unit-${index}">
+                            ${unitOptionsHTML}
+                        </select>
+                    </div>
+                </div>
+                <span class="form-hint">Use underscores for spaces. Case-sensitive.</span>
+            `;
+        } else if (type === 'const') {
+            html = `
+                <div class="field-item-header">
+                    <label class="form-label">Constant <span class="index">${index + 1}</span> — Label</label>
+                    <button type="button" class="btn-remove-field" onclick="removeField(this, 'const')">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+                <input type="text" name="const_label_${index}" class="form-input"
+                       id="const-label-${index}" placeholder="e.g. grav, pi_factor" required maxlength="50">
+                <label class="form-label" style="margin-top:1rem;">Value</label>
+                <input type="number" step="any" name="const_value_${index}" class="form-input"
+                       id="const-value-${index}" placeholder="e.g. 9.81" required>
+            `;
+        } else if (type === 'dropdown') {
+            html = `
+                <div class="field-item-header">
+                    <label class="form-label">Menu <span class="index">${index + 1}</span> — Label</label>
+                    <button type="button" class="btn-remove-field" onclick="removeField(this, 'dropdown')">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+                <input type="text" name="dropdown_label_${index}" class="form-input"
+                       id="dropdown-label-${index}" placeholder="e.g. Load Type" required maxlength="80">
+                <label class="form-label" style="margin-top:1rem;">
+                    Available Options <span class="form-hint" style="display:inline;">(comma-separated)</span>
+                </label>
+                <input type="text" name="dropdown_items_${index}" class="form-input"
+                       id="dropdown-items-${index}" placeholder="e.g. Type A, Type B" required>
+            `;
+        } else if (type === 'output') {
+            html = `
+                <div class="field-item-header">
+                    <label class="form-label">Output <span class="index">${index + 1}</span> — Label</label>
+                    <button type="button" class="btn-remove-field" onclick="removeField(this, 'output')">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                </div>
+                <div style="display:flex; gap:10px; align-items: flex-start;">
+                    <div style="flex:2;">
+                        <input type="text" name="output_label_${index}" class="form-input"
+                               id="output-label-${index}" placeholder="e.g. Safety Factor" required maxlength="80">
+                    </div>
+                    <div style="flex:1;">
+                        <select name="output_unit_${index}" class="form-input" id="output-unit-${index}">
+                            ${unitOptionsHTML}
+                        </select>
+                    </div>
+                </div>
+                <label class="form-label" style="margin-top:1rem;">Formula Logic</label>
+                <input type="text" name="output_formula_${index}" class="form-input mono"
+                       id="output-formula-${index}" placeholder="e.g. (a * b) / c" required>
+            `;
+        }
+
+        div.innerHTML = html;
+        container.appendChild(div);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function removeField(btn, type) {
+        const item = btn.closest('.field-item');
+        const container = item.parentElement;
+        item.remove();
+        reindex(container, type);
+    }
+
+    function reindex(container, type) {
+        [...container.children].forEach((item, i) => {
+            const indexSpan = item.querySelector('.index');
+            if (indexSpan) indexSpan.textContent = i + 1;
+
+            if (type === 'input') {
+                const inp = item.querySelector('input');
+                inp.name = `input_label_${i}`;
+                inp.id = `input-label-${i}`;
+                const sel = item.querySelector('select');
+                if (sel) { sel.name = `input_unit_${i}`; sel.id = `input-unit-${i}`; }
+            } else if (type === 'const') {
+                item.querySelector('input[name^="const_label_"]').name = `const_label_${i}`;
+                item.querySelector('input[name^="const_label_"]').id = `const-label-${i}`;
+                item.querySelector('input[name^="const_value_"]').name = `const_value_${i}`;
+                item.querySelector('input[name^="const_value_"]').id = `const-value-${i}`;
+            } else if (type === 'dropdown') {
+                item.querySelector('input[name^="dropdown_label_"]').name = `dropdown_label_${i}`;
+                item.querySelector('input[name^="dropdown_label_"]').id = `dropdown-label-${i}`;
+                item.querySelector('input[name^="dropdown_items_"]').name = `dropdown_items_${i}`;
+                item.querySelector('input[name^="dropdown_items_"]').id = `dropdown-items-${i}`;
+            } else if (type === 'output') {
+                item.querySelector('input[name^="output_label_"]').name = `output_label_${i}`;
+                item.querySelector('input[name^="output_label_"]').id = `output-label-${i}`;
+                item.querySelectorAll('input')[1].name = `output_formula_${i}`;
+                item.querySelectorAll('input')[1].id = `output-formula-${i}`;
+                const sel = item.querySelector('select');
+                if (sel) { sel.name = `output_unit_${i}`; sel.id = `output-unit-${i}`; }
+            }
+        });
+    }
+
+    // ── IMAGE MANAGEMENT ──────────────────────────────────────
     let imgSlotCount = 0;
     const MAX_IMAGES = 8;
 
@@ -410,7 +633,7 @@
 
     function previewImage(input, idx) {
         const wrap = document.getElementById('preview-wrap-' + idx);
-        const img  = document.getElementById('img-preview-' + idx);
+        const img = document.getElementById('img-preview-' + idx);
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = e => {
@@ -426,238 +649,238 @@
 
 <!-- ── Formula Autocomplete ──────────────────────────────────── -->
 <script>
-(function () {
-    const FN_LIST = [
-        { name:'SUM',         cat:'Statistical', fn:true  },
-        { name:'AVERAGE',     cat:'Statistical', fn:true  },
-        { name:'AVG',         cat:'Statistical', fn:true  },
-        { name:'MIN',         cat:'Statistical', fn:true  },
-        { name:'MAX',         cat:'Statistical', fn:true  },
-        { name:'COUNT',       cat:'Statistical', fn:true  },
-        { name:'MEDIAN',      cat:'Statistical', fn:true  },
-        { name:'MODE',        cat:'Statistical', fn:true  },
-        { name:'STDEV',       cat:'Statistical', fn:true  },
-        { name:'VAR',         cat:'Statistical', fn:true  },
-        { name:'PRODUCT',     cat:'Statistical', fn:true  },
-        { name:'LARGE',       cat:'Statistical', fn:true  },
-        { name:'SMALL',       cat:'Statistical', fn:true  },
-        { name:'sum',         cat:'Statistical', fn:true  },
-        { name:'min',         cat:'Statistical', fn:true  },
-        { name:'max',         cat:'Statistical', fn:true  },
-        { name:'average',     cat:'Statistical', fn:true  },
-        { name:'median',      cat:'Statistical', fn:true  },
-        { name:'mode',        cat:'Statistical', fn:true  },
-        { name:'product',     cat:'Statistical', fn:true  },
-        { name:'IF',          cat:'Logical',     fn:true  },
-        { name:'IFS',         cat:'Logical',     fn:true  },
-        { name:'AND',         cat:'Logical',     fn:true  },
-        { name:'OR',          cat:'Logical',     fn:true  },
-        { name:'NOT',         cat:'Logical',     fn:true  },
-        { name:'ABS',         cat:'Math',        fn:true  },
-        { name:'SQRT',        cat:'Math',        fn:true  },
-        { name:'POWER',       cat:'Math',        fn:true  },
-        { name:'MOD',         cat:'Math',        fn:true  },
-        { name:'SIGN',        cat:'Math',        fn:true  },
-        { name:'INT',         cat:'Math',        fn:true  },
-        { name:'GCD',         cat:'Math',        fn:true  },
-        { name:'LCM',         cat:'Math',        fn:true  },
-        { name:'CLAMP',       cat:'Math',        fn:true  },
-        { name:'HYPOT',       cat:'Math',        fn:true  },
-        { name:'FACT',        cat:'Math',        fn:true  },
-        { name:'sqrt',        cat:'Math',        fn:true  },
-        { name:'abs',         cat:'Math',        fn:true  },
-        { name:'pow',         cat:'Math',        fn:true  },
-        { name:'hypot',       cat:'Math',        fn:true  },
-        { name:'factorial',   cat:'Math',        fn:true  },
-        { name:'ROUND',       cat:'Rounding',    fn:true  },
-        { name:'ROUNDUP',     cat:'Rounding',    fn:true  },
-        { name:'ROUNDDOWN',   cat:'Rounding',    fn:true  },
-        { name:'CEILING',     cat:'Rounding',    fn:true  },
-        { name:'FLOOR',       cat:'Rounding',    fn:true  },
-        { name:'TRUNC',       cat:'Rounding',    fn:true  },
-        { name:'round',       cat:'Rounding',    fn:true  },
-        { name:'ceil',        cat:'Rounding',    fn:true  },
-        { name:'floor',       cat:'Rounding',    fn:true  },
-        { name:'trunc',       cat:'Rounding',    fn:true  },
-        { name:'SIN',         cat:'Trig',        fn:true  },
-        { name:'COS',         cat:'Trig',        fn:true  },
-        { name:'TAN',         cat:'Trig',        fn:true  },
-        { name:'ASIN',        cat:'Trig',        fn:true  },
-        { name:'ACOS',        cat:'Trig',        fn:true  },
-        { name:'ATAN',        cat:'Trig',        fn:true  },
-        { name:'ATAN2',       cat:'Trig',        fn:true  },
-        { name:'SINH',        cat:'Trig',        fn:true  },
-        { name:'COSH',        cat:'Trig',        fn:true  },
-        { name:'TANH',        cat:'Trig',        fn:true  },
-        { name:'DEGREES',     cat:'Trig',        fn:true  },
-        { name:'RADIANS',     cat:'Trig',        fn:true  },
-        { name:'sin',         cat:'Trig',        fn:true  },
-        { name:'cos',         cat:'Trig',        fn:true  },
-        { name:'tan',         cat:'Trig',        fn:true  },
-        { name:'degrees',     cat:'Trig',        fn:true  },
-        { name:'radians',     cat:'Trig',        fn:true  },
-        { name:'LOG',         cat:'Log/Exp',     fn:true  },
-        { name:'LOG10',       cat:'Log/Exp',     fn:true  },
-        { name:'LOG2',        cat:'Log/Exp',     fn:true  },
-        { name:'LOG1P',       cat:'Log/Exp',     fn:true  },
-        { name:'EXP',         cat:'Log/Exp',     fn:true  },
-        { name:'EXPM1',       cat:'Log/Exp',     fn:true  },
-        { name:'log',         cat:'Log/Exp',     fn:true  },
-        { name:'log10',       cat:'Log/Exp',     fn:true  },
-        { name:'log2',        cat:'Log/Exp',     fn:true  },
-        { name:'log1p',       cat:'Log/Exp',     fn:true  },
-        { name:'exp',         cat:'Log/Exp',     fn:true  },
-        { name:'expm1',       cat:'Log/Exp',     fn:true  },
-        { name:'RAND',        cat:'Other',       fn:true  },
-        { name:'RANDBETWEEN', cat:'Other',       fn:true  },
-        { name:'pi',          cat:'Const',       fn:false },
-        { name:'PI',          cat:'Const',       fn:false },
-        { name:'e',           cat:'Const',       fn:false },
-        { name:'op1',         cat:'Output ref',  fn:false },
-        { name:'op2',         cat:'Output ref',  fn:false },
-        { name:'op3',         cat:'Output ref',  fn:false },
-        { name:'op4',         cat:'Output ref',  fn:false },
-    ];
+    (function () {
+        const FN_LIST = [
+            { name: 'SUM', cat: 'Statistical', fn: true },
+            { name: 'AVERAGE', cat: 'Statistical', fn: true },
+            { name: 'AVG', cat: 'Statistical', fn: true },
+            { name: 'MIN', cat: 'Statistical', fn: true },
+            { name: 'MAX', cat: 'Statistical', fn: true },
+            { name: 'COUNT', cat: 'Statistical', fn: true },
+            { name: 'MEDIAN', cat: 'Statistical', fn: true },
+            { name: 'MODE', cat: 'Statistical', fn: true },
+            { name: 'STDEV', cat: 'Statistical', fn: true },
+            { name: 'VAR', cat: 'Statistical', fn: true },
+            { name: 'PRODUCT', cat: 'Statistical', fn: true },
+            { name: 'LARGE', cat: 'Statistical', fn: true },
+            { name: 'SMALL', cat: 'Statistical', fn: true },
+            { name: 'sum', cat: 'Statistical', fn: true },
+            { name: 'min', cat: 'Statistical', fn: true },
+            { name: 'max', cat: 'Statistical', fn: true },
+            { name: 'average', cat: 'Statistical', fn: true },
+            { name: 'median', cat: 'Statistical', fn: true },
+            { name: 'mode', cat: 'Statistical', fn: true },
+            { name: 'product', cat: 'Statistical', fn: true },
+            { name: 'IF', cat: 'Logical', fn: true },
+            { name: 'IFS', cat: 'Logical', fn: true },
+            { name: 'AND', cat: 'Logical', fn: true },
+            { name: 'OR', cat: 'Logical', fn: true },
+            { name: 'NOT', cat: 'Logical', fn: true },
+            { name: 'ABS', cat: 'Math', fn: true },
+            { name: 'SQRT', cat: 'Math', fn: true },
+            { name: 'POWER', cat: 'Math', fn: true },
+            { name: 'MOD', cat: 'Math', fn: true },
+            { name: 'SIGN', cat: 'Math', fn: true },
+            { name: 'INT', cat: 'Math', fn: true },
+            { name: 'GCD', cat: 'Math', fn: true },
+            { name: 'LCM', cat: 'Math', fn: true },
+            { name: 'CLAMP', cat: 'Math', fn: true },
+            { name: 'HYPOT', cat: 'Math', fn: true },
+            { name: 'FACT', cat: 'Math', fn: true },
+            { name: 'sqrt', cat: 'Math', fn: true },
+            { name: 'abs', cat: 'Math', fn: true },
+            { name: 'pow', cat: 'Math', fn: true },
+            { name: 'hypot', cat: 'Math', fn: true },
+            { name: 'factorial', cat: 'Math', fn: true },
+            { name: 'ROUND', cat: 'Rounding', fn: true },
+            { name: 'ROUNDUP', cat: 'Rounding', fn: true },
+            { name: 'ROUNDDOWN', cat: 'Rounding', fn: true },
+            { name: 'CEILING', cat: 'Rounding', fn: true },
+            { name: 'FLOOR', cat: 'Rounding', fn: true },
+            { name: 'TRUNC', cat: 'Rounding', fn: true },
+            { name: 'round', cat: 'Rounding', fn: true },
+            { name: 'ceil', cat: 'Rounding', fn: true },
+            { name: 'floor', cat: 'Rounding', fn: true },
+            { name: 'trunc', cat: 'Rounding', fn: true },
+            { name: 'SIN', cat: 'Trig', fn: true },
+            { name: 'COS', cat: 'Trig', fn: true },
+            { name: 'TAN', cat: 'Trig', fn: true },
+            { name: 'ASIN', cat: 'Trig', fn: true },
+            { name: 'ACOS', cat: 'Trig', fn: true },
+            { name: 'ATAN', cat: 'Trig', fn: true },
+            { name: 'ATAN2', cat: 'Trig', fn: true },
+            { name: 'SINH', cat: 'Trig', fn: true },
+            { name: 'COSH', cat: 'Trig', fn: true },
+            { name: 'TANH', cat: 'Trig', fn: true },
+            { name: 'DEGREES', cat: 'Trig', fn: true },
+            { name: 'RADIANS', cat: 'Trig', fn: true },
+            { name: 'sin', cat: 'Trig', fn: true },
+            { name: 'cos', cat: 'Trig', fn: true },
+            { name: 'tan', cat: 'Trig', fn: true },
+            { name: 'degrees', cat: 'Trig', fn: true },
+            { name: 'radians', cat: 'Trig', fn: true },
+            { name: 'LOG', cat: 'Log/Exp', fn: true },
+            { name: 'LOG10', cat: 'Log/Exp', fn: true },
+            { name: 'LOG2', cat: 'Log/Exp', fn: true },
+            { name: 'LOG1P', cat: 'Log/Exp', fn: true },
+            { name: 'EXP', cat: 'Log/Exp', fn: true },
+            { name: 'EXPM1', cat: 'Log/Exp', fn: true },
+            { name: 'log', cat: 'Log/Exp', fn: true },
+            { name: 'log10', cat: 'Log/Exp', fn: true },
+            { name: 'log2', cat: 'Log/Exp', fn: true },
+            { name: 'log1p', cat: 'Log/Exp', fn: true },
+            { name: 'exp', cat: 'Log/Exp', fn: true },
+            { name: 'expm1', cat: 'Log/Exp', fn: true },
+            { name: 'RAND', cat: 'Other', fn: true },
+            { name: 'RANDBETWEEN', cat: 'Other', fn: true },
+            { name: 'pi', cat: 'Const', fn: false },
+            { name: 'PI', cat: 'Const', fn: false },
+            { name: 'e', cat: 'Const', fn: false },
+            { name: 'op1', cat: 'Output ref', fn: false },
+            { name: 'op2', cat: 'Output ref', fn: false },
+            { name: 'op3', cat: 'Output ref', fn: false },
+            { name: 'op4', cat: 'Output ref', fn: false },
+        ];
 
-    const CAT_COLOR = {
-        'Statistical':'#1e6f3e','Logical':'#7a5c00','Math':'#004b50',
-        'Rounding':'#5a4a8a','Trig':'#8b3a3a','Log/Exp':'#2c5f8a',
-        'Other':'#555','Const':'#b8972a','Output ref':'#888',
-    };
+        const CAT_COLOR = {
+            'Statistical': '#1e6f3e', 'Logical': '#7a5c00', 'Math': '#004b50',
+            'Rounding': '#5a4a8a', 'Trig': '#8b3a3a', 'Log/Exp': '#2c5f8a',
+            'Other': '#555', 'Const': '#b8972a', 'Output ref': '#888',
+        };
 
-    // Build shared dropdown element
-    const dropdown = document.createElement('div');
-    dropdown.id = 'fn-autocomplete';
-    Object.assign(dropdown.style, {
-        position:'fixed', zIndex:'9999', background:'#fff',
-        border:'1px solid #d0d8d8',
-        boxShadow:'0 8px 28px rgba(0,0,0,0.13)',
-        maxHeight:'280px', overflowY:'auto',
-        display:'none', minWidth:'240px',
-        fontFamily:"'Source Sans 3',sans-serif",
-    });
-    document.body.appendChild(dropdown);
-
-    let activeInput  = null;
-    let activeIdx    = -1;
-    let currentItems = [];
-
-    function getWord(input) {
-        const before = input.value.slice(0, input.selectionStart);
-        const m = before.match(/[A-Za-z_][A-Za-z0-9_]*$/);
-        return m ? m[0] : '';
-    }
-
-    function replaceWord(input, replacement) {
-        const val    = input.value;
-        const caret  = input.selectionStart;
-        const before = val.slice(0, caret);
-        const after  = val.slice(caret);
-        const m      = before.match(/[A-Za-z_][A-Za-z0-9_]*$/);
-        if (!m) return;
-        const start  = caret - m[0].length;
-        input.value  = val.slice(0, start) + replacement + after;
-        const pos    = start + replacement.length;
-        input.setSelectionRange(pos, pos);
-    }
-
-    function renderDropdown(input, items) {
-        if (!items.length) { hideDropdown(); return; }
-        currentItems = items; activeIdx = -1;
-        dropdown.innerHTML = '';
-        items.forEach((item, i) => {
-            const row = document.createElement('div');
-            const cc  = CAT_COLOR[item.cat] || '#666';
-            Object.assign(row.style, {
-                display:'flex', alignItems:'center', gap:'10px',
-                padding:'7px 14px', cursor:'pointer',
-                fontSize:'0.88rem', borderBottom:'1px solid #f0f2f2',
-            });
-            row.innerHTML =
-                '<span style="font-family:monospace;font-weight:700;color:#003840;flex:1">'
-                + item.name + (item.fn ? '()' : '') + '</span>'
-                + '<span style="font-size:0.68rem;font-weight:700;text-transform:uppercase;'
-                + 'letter-spacing:.05em;color:' + cc + ';background:' + cc + '18;padding:2px 6px;">'
-                + item.cat + '</span>';
-            row.addEventListener('mouseover', () => setActive(i));
-            row.addEventListener('mousedown', e => { e.preventDefault(); insert(i); });
-            dropdown.appendChild(row);
-        });
-        const rect = input.getBoundingClientRect();
+        // Build shared dropdown element
+        const dropdown = document.createElement('div');
+        dropdown.id = 'fn-autocomplete';
         Object.assign(dropdown.style, {
-            left   : rect.left   + 'px',
-            top    : (rect.bottom + 3) + 'px',
-            width  : Math.max(260, rect.width) + 'px',
-            display: 'block',
+            position: 'fixed', zIndex: '9999', background: '#fff',
+            border: '1px solid #d0d8d8',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.13)',
+            maxHeight: '280px', overflowY: 'auto',
+            display: 'none', minWidth: '240px',
+            fontFamily: "'Source Sans 3',sans-serif",
         });
-    }
+        document.body.appendChild(dropdown);
 
-    function hideDropdown() {
-        dropdown.style.display = 'none';
-        activeIdx = -1; currentItems = [];
-    }
+        let activeInput = null;
+        let activeIdx = -1;
+        let currentItems = [];
 
-    function setActive(idx) {
-        [...dropdown.children].forEach((r, i) => {
-            r.style.background = i === idx ? '#e8f2f2' : '';
-        });
-        activeIdx = idx;
-        dropdown.children[idx] && dropdown.children[idx].scrollIntoView({block:'nearest'});
-    }
+        function getWord(input) {
+            const before = input.value.slice(0, input.selectionStart);
+            const m = before.match(/[A-Za-z_][A-Za-z0-9_]*$/);
+            return m ? m[0] : '';
+        }
 
-    function insert(idx) {
-        if (!activeInput || !currentItems[idx]) return;
-        const item = currentItems[idx];
-        replaceWord(activeInput, item.fn ? item.name + '(' : item.name);
-        activeInput.focus();
-        hideDropdown();
-    }
+        function replaceWord(input, replacement) {
+            const val = input.value;
+            const caret = input.selectionStart;
+            const before = val.slice(0, caret);
+            const after = val.slice(caret);
+            const m = before.match(/[A-Za-z_][A-Za-z0-9_]*$/);
+            if (!m) return;
+            const start = caret - m[0].length;
+            input.value = val.slice(0, start) + replacement + after;
+            const pos = start + replacement.length;
+            input.setSelectionRange(pos, pos);
+        }
 
-    function onInput(e) {
-        const input = e.target;
-        activeInput = input;
-        const word  = getWord(input);
-        if (!word) { hideDropdown(); return; }
-        const q = word.toLowerCase();
-        const hits = FN_LIST
-            .filter(f => f.name.toLowerCase().startsWith(q) && f.name.toLowerCase() !== q)
-            // Deduplicate by name
-            .filter((f, i, arr) => arr.findIndex(x => x.name === f.name) === i)
-            .slice(0, 12);
-        renderDropdown(input, hits);
-    }
+        function renderDropdown(input, items) {
+            if (!items.length) { hideDropdown(); return; }
+            currentItems = items; activeIdx = -1;
+            dropdown.innerHTML = '';
+            items.forEach((item, i) => {
+                const row = document.createElement('div');
+                const cc = CAT_COLOR[item.cat] || '#666';
+                Object.assign(row.style, {
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '7px 14px', cursor: 'pointer',
+                    fontSize: '0.88rem', borderBottom: '1px solid #f0f2f2',
+                });
+                row.innerHTML =
+                    '<span style="font-family:monospace;font-weight:700;color:#003840;flex:1">'
+                    + item.name + (item.fn ? '()' : '') + '</span>'
+                    + '<span style="font-size:0.68rem;font-weight:700;text-transform:uppercase;'
+                    + 'letter-spacing:.05em;color:' + cc + ';background:' + cc + '18;padding:2px 6px;">'
+                    + item.cat + '</span>';
+                row.addEventListener('mouseover', () => setActive(i));
+                row.addEventListener('mousedown', e => { e.preventDefault(); insert(i); });
+                dropdown.appendChild(row);
+            });
+            const rect = input.getBoundingClientRect();
+            Object.assign(dropdown.style, {
+                left: rect.left + 'px',
+                top: (rect.bottom + 3) + 'px',
+                width: Math.max(260, rect.width) + 'px',
+                display: 'block',
+            });
+        }
 
-    function onKeydown(e) {
-        if (dropdown.style.display === 'none') return;
-        if (e.key === 'ArrowDown') {
-            e.preventDefault(); setActive(Math.min(activeIdx + 1, currentItems.length - 1));
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault(); setActive(Math.max(activeIdx - 1, 0));
-        } else if (e.key === 'Enter' || e.key === 'Tab') {
-            if (activeIdx >= 0) { e.preventDefault(); insert(activeIdx); }
-            else if (currentItems.length === 1) { e.preventDefault(); insert(0); }
-        } else if (e.key === 'Escape') {
+        function hideDropdown() {
+            dropdown.style.display = 'none';
+            activeIdx = -1; currentItems = [];
+        }
+
+        function setActive(idx) {
+            [...dropdown.children].forEach((r, i) => {
+                r.style.background = i === idx ? '#e8f2f2' : '';
+            });
+            activeIdx = idx;
+            dropdown.children[idx] && dropdown.children[idx].scrollIntoView({ block: 'nearest' });
+        }
+
+        function insert(idx) {
+            if (!activeInput || !currentItems[idx]) return;
+            const item = currentItems[idx];
+            replaceWord(activeInput, item.fn ? item.name + '(' : item.name);
+            activeInput.focus();
             hideDropdown();
         }
-    }
 
-    function attachTo(input) {
-        input.setAttribute('autocomplete', 'off');
-        input.addEventListener('input',   onInput);
-        input.addEventListener('keydown', onKeydown);
-        input.addEventListener('blur',  () => setTimeout(hideDropdown, 160));
-        input.addEventListener('click', onInput);
-    }
+        function onInput(e) {
+            const input = e.target;
+            activeInput = input;
+            const word = getWord(input);
+            if (!word) { hideDropdown(); return; }
+            const q = word.toLowerCase();
+            const hits = FN_LIST
+                .filter(f => f.name.toLowerCase().startsWith(q) && f.name.toLowerCase() !== q)
+                // Deduplicate by name
+                .filter((f, i, arr) => arr.findIndex(x => x.name === f.name) === i)
+                .slice(0, 12);
+            renderDropdown(input, hits);
+        }
 
-    // Attach to all formula inputs (present and future)
-    document.querySelectorAll('input[id^="output-formula-"]').forEach(attachTo);
-    new MutationObserver(muts => muts.forEach(m =>
-        m.addedNodes.forEach(n => n.querySelectorAll &&
-            n.querySelectorAll('input[id^="output-formula-"]').forEach(attachTo))
-    )).observe(document.body, { childList:true, subtree:true });
+        function onKeydown(e) {
+            if (dropdown.style.display === 'none') return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault(); setActive(Math.min(activeIdx + 1, currentItems.length - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault(); setActive(Math.max(activeIdx - 1, 0));
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                if (activeIdx >= 0) { e.preventDefault(); insert(activeIdx); }
+                else if (currentItems.length === 1) { e.preventDefault(); insert(0); }
+            } else if (e.key === 'Escape') {
+                hideDropdown();
+            }
+        }
 
-    window.addEventListener('scroll', hideDropdown, true);
-    window.addEventListener('resize', hideDropdown);
-})();
+        function attachTo(input) {
+            input.setAttribute('autocomplete', 'off');
+            input.addEventListener('input', onInput);
+            input.addEventListener('keydown', onKeydown);
+            input.addEventListener('blur', () => setTimeout(hideDropdown, 160));
+            input.addEventListener('click', onInput);
+        }
+
+        // Attach to all formula inputs (present and future)
+        document.querySelectorAll('input[id^="output-formula-"]').forEach(attachTo);
+        new MutationObserver(muts => muts.forEach(m =>
+            m.addedNodes.forEach(n => n.querySelectorAll &&
+                n.querySelectorAll('input[id^="output-formula-"]').forEach(attachTo))
+        )).observe(document.body, { childList: true, subtree: true });
+
+        window.addEventListener('scroll', hideDropdown, true);
+        window.addEventListener('resize', hideDropdown);
+    })();
 </script>
 {% endblock %}
