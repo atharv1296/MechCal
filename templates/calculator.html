@@ -111,84 +111,8 @@
                 </div>
 
                 <!-- RIGHT PANEL: Outputs -->
-                <div class="calc-panel outputs-panel">
-                    <h2 class="panel-heading">
-                        <i data-lucide="bar-chart-3"></i> Computation Results
-                    </h2>
-
-                    {% if results %}
-                    {% for r in results %}
-                    <div class="result-card {% if r.error %}result-error{% else %}result-ok{% endif %}"
-                        style="position: relative;">
-                        <div class="result-label">
-                            {{ r.label }}
-                        </div>
-                        {% if not r.error %}
-                        <div style="position: absolute; top: 12px; right: 12px;">
-                            <select class="round-select" onchange="applyRounding(this)"
-                                style="font-size:0.75rem; padding:2px 4px; border-radius:4px; border:1px solid var(--border-light); background: #fff; cursor: pointer; color: #444;">
-                                <option value="none">Round: None</option>
-                                <option value="0">0 dec</option>
-                                <option value="1">1 dec</option>
-                                <option value="2">2 dec</option>
-                                <option value="3">3 dec</option>
-                                <option value="4">4 dec</option>
-                            </select>
-                        </div>
-                        {% endif %}
-                        {% if r.error %}
-                        <div class="error-val">
-                            <i data-lucide="alert-circle" style="width:16px; vertical-align:middle;"></i>
-                            Formula Error
-                        </div>
-                        <div class="result-formula error-msg">{{ r.error }}</div>
-                        {% else %}
-                        <div class="result-value" data-raw-value="{{ r.value }}">
-                            {{ r.value }} <span class="result-unit"
-                                style="font-size: 1rem; color: #64748b; font-weight: 400;">{{ r.unit or '' }}</span>
-                        </div>
-                        <div class="result-formula">
-                            Formula: <code>{{ r.formula }}</code>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-
-                    <div class="result-timestamp">
-                        <i data-lucide="check-circle-2"></i>
-                        Computed &amp; verified at {{ now }}
-                    </div>
-
-                    <!-- ── PDF REPORT ACTION ──────────────────────────────── -->
-                    <div class="report-action-wrap">
-                        <button type="button" class="btn-generate-pdf" onclick="openReportModal()">
-                            <i data-lucide="file-text"></i> Generate PDF Report
-                        </button>
-                        <p class="report-hint">Includes inputs, results, and reference images.</p>
-                    </div>
-
-                    {% else %}
-                    <!-- Placeholder slots -->
-                    {% if config.get('outputs') %}
-                    {% for out in config['outputs'] %}
-                    <div class="result-card result-pending">
-                        <div class="result-label">
-                            {{ out['label'] }}
-                        </div>
-                        <div class="result-value">— <span class="result-unit"
-                                style="font-size: 1rem; color: #64748b; font-weight: 400;">{{ out.get('unit', '')
-                                }}</span></div>
-                        <div class="result-formula">Formula: <code>{{ out['formula'] }}</code></div>
-                    </div>
-                    {% endfor %}
-                    {% endif %}
-
-                    <div class="results-placeholder">
-                        <i data-lucide="play-circle" style="width:44px; height:44px;"></i>
-                        <p>Provide inputs and click <strong>Compute Results</strong> to execute.</p>
-                    </div>
-                    {% endif %}
-
+                <div class="calc-panel outputs-panel" id="outputs-panel">
+                    {% include "outputs_partial.html" %}
                 </div><!-- /outputs-panel -->
 
             </div><!-- /calc-grid -->
@@ -465,6 +389,129 @@
             let taParsedHeaders = [];
             let taParsedRows = [];
 
+            function loadSavedTable(savedTable) {
+                if (!savedTable || !savedTable.headers || !savedTable.rows) return;
+
+                taParsedHeaders = savedTable.headers;
+                taParsedRows = savedTable.rows;
+
+                const targetSelect = document.getElementById('ta-target-col');
+                const resultSelect = document.getElementById('ta-result-col');
+                if (targetSelect && resultSelect) {
+                    targetSelect.innerHTML = '<option value="">-- Select Column --</option>';
+                    resultSelect.innerHTML = '<option value="">-- Select Column --</option>';
+
+                    taParsedHeaders.forEach((header, index) => {
+                        const opt1 = document.createElement('option');
+                        opt1.value = index;
+                        opt1.textContent = header || `Col ${index + 1}`;
+                        targetSelect.appendChild(opt1);
+
+                        const opt2 = document.createElement('option');
+                        opt2.value = index;
+                        opt2.textContent = header || `Col ${index + 1}`;
+                        resultSelect.appendChild(opt2);
+                    });
+                }
+
+                // Build table UI
+                const thead = document.getElementById('ta-preview-head');
+                const tbody = document.getElementById('ta-preview-body');
+                if (thead && tbody) {
+                    thead.innerHTML = '';
+                    tbody.innerHTML = '';
+
+                    const trHead = document.createElement('tr');
+                    taParsedHeaders.forEach((header, index) => {
+                        const th = document.createElement('th');
+                        th.textContent = header || `Col ${index + 1}`;
+                        trHead.appendChild(th);
+                    });
+                    thead.appendChild(trHead);
+
+                    taParsedRows.forEach(row => {
+                        const tr = document.createElement('tr');
+                        for (let i = 0; i < taParsedHeaders.length; i++) {
+                            const td = document.createElement('td');
+                            td.textContent = row[i] || '';
+                            tr.appendChild(td);
+                        }
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                // Switch view
+                const pasteContainer = document.getElementById('ta-paste-container');
+                const previewContainer = document.getElementById('ta-preview-container');
+                if (pasteContainer && previewContainer) {
+                    pasteContainer.style.display = 'none';
+                    previewContainer.style.display = 'flex';
+                }
+                
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                // Add keyframes for spinner if not present
+                if (!document.getElementById('spin-keyframes-style')) {
+                    const styleEl = document.createElement('style');
+                    styleEl.id = 'spin-keyframes-style';
+                    styleEl.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
+                    document.head.appendChild(styleEl);
+                }
+
+                {% if config.get('saved_table') %}
+                const savedTable = {{ config['saved_table']|tojson|safe }};
+                loadSavedTable(savedTable);
+                {% endif %}
+
+                // AJAX submit listener
+                const calcForm = document.getElementById('calc-form');
+                if (calcForm) {
+                    calcForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const form = this;
+                        const submitBtn = form.querySelector('.btn-calculate');
+                        if (!submitBtn) return;
+                        
+                        const originalText = submitBtn.innerHTML;
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border" style="display:inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: text-bottom; margin-right: 6px; animation: spin 0.75s linear infinite;"></span> Computing...';
+
+                        const formData = new FormData(form);
+                        fetch(form.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
+                            if (data.html) {
+                                document.getElementById('outputs-panel').innerHTML = data.html;
+                                if (typeof lucide !== 'undefined') lucide.createIcons();
+                            }
+                            if (data.ta_values) {
+                                for (const key in data.ta_values) {
+                                    TA_VALUES[key] = data.ta_values[key];
+                                }
+                                const resBox = document.getElementById('ta-result-box');
+                                if (resBox) resBox.style.display = 'none';
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Calculation failed:", err);
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
+                            alert("An error occurred while computing results. Please check your inputs.");
+                        });
+                    });
+                }
+            });
+
             function resetTablePaste() {
                 document.getElementById('ta-paste-area').value = '';
                 document.getElementById('ta-paste-container').style.display = 'block';
@@ -685,12 +732,18 @@
         if (isNaN(rawVal)) return;
 
         const roundTo = selectElem.value;
+        const unitSpan = valElem.querySelector('.result-unit');
+        const unitHtml = unitSpan ? unitSpan.outerHTML : '';
+        
+        let roundedStr = "";
         if (roundTo === 'none') {
-            valElem.textContent = rawVal;
+            roundedStr = rawVal.toString();
         } else {
             const decimals = parseInt(roundTo, 10);
-            valElem.textContent = rawVal.toFixed(decimals);
+            roundedStr = rawVal.toFixed(decimals);
         }
+        valElem.innerHTML = roundedStr + ' ' + unitHtml;
     }
 </script>
+
 {% endblock %}

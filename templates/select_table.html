@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+{% block title %}Select Reference Table — {{ calc.title }}{% endblock %}
+
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calculator.css') }}">
+<style>
+    .selection-workspace {
+        padding: 2rem 0;
+        background: #f8fafc;
+    }
+    .calc-main-title,
+    .calc-subtitle {
+        color: #0d0d0e;
+    }
+    .workspace-header {
+        margin-bottom: 2rem;
+    }
+    .btn-reset {
+        background: transparent;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        border-radius: 4px;
+        padding: 1rem;
+        transition: background-color 0.15s, border-color 0.15s;
+    }
+    .step-badge {
+        display: inline-block;
+        background: var(--ac-teal-dark, #004b50);
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 99px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+    }
+
+    .workspace-grid {
+        display: grid;
+        grid-template-columns: 3fr 2fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+        .workspace-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .grid-container {
+        background: #fff;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        max-height: 700px;
+    }
+
+    .grid-toolbar {
+        background: #f1f5f9;
+        padding: 12px 16px;
+        border-bottom: 1px solid #cbd5e1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .grid-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #334155;
+        margin: 0;
+    }
+
+    .grid-scroll {
+        overflow: auto;
+        flex: 1;
+    }
+
+    .source-table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.8rem;
+        font-family: monospace;
+    }
+
+    .source-table th, .source-table td {
+        border: 1px solid #e2e8f0;
+        padding: 8px 12px;
+        text-align: left;
+        white-space: nowrap;
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.15s;
+    }
+
+    .source-table th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        box-shadow: 0 1px 0 #e2e8f0;
+    }
+
+    /* Interactive States */
+    .source-table td:hover {
+        background-color: rgba(0, 75, 80, 0.05);
+    }
+
+    .source-table td.selected-start {
+        background-color: #10b981 !important;
+        color: #fff !important;
+        font-weight: bold;
+    }
+
+    .source-table td.selected-end {
+        background-color: #ef4444 !important;
+        color: #fff !important;
+        font-weight: bold;
+    }
+
+    .source-table td.in-range {
+        background-color: rgba(0, 75, 80, 0.12) !important;
+        border-color: #004b50 !important;
+    }
+
+    .source-table tr.header-row td.in-range {
+        background-color: rgba(184, 151, 42, 0.2) !important;
+        border-color: #b8972a !important;
+        font-weight: 600;
+    }
+
+    .control-panel {
+        background: #fff;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .instructions-card {
+        background: rgba(0,75,80,0.03);
+        border-left: 4px solid var(--ac-teal-dark, #004b50);
+        padding: 1rem;
+        border-radius: 0 6px 6px 0;
+    }
+
+    .instructions-card p {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        color: #334155;
+    }
+
+    .instructions-card ul {
+        margin: 0;
+        padding-left: 1.25rem;
+        font-size: 0.85rem;
+        color: #475569;
+    }
+
+    .instructions-card li {
+        margin-bottom: 0.25rem;
+    }
+
+    .preview-box {
+        border: 1px dashed #cbd5e1;
+        border-radius: 6px;
+        padding: 1rem;
+        background: #f8fafc;
+        max-height: 250px;
+        overflow-y: auto;
+    }
+
+    .preview-placeholder {
+        text-align: center;
+        color: #94a3b8;
+        padding: 2rem 0;
+        font-style: italic;
+    }
+
+    .preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.75rem;
+    }
+
+    .preview-table th, .preview-table td {
+        border: 1px solid #cbd5e1;
+        padding: 6px 10px;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .preview-table th {
+        background: #f1f5f9;
+        font-weight: 600;
+        color: #334155;
+    }
+
+    .action-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 1rem;
+    }
+
+    .action-row button, .action-row a {
+        flex: 1;
+        text-align: center;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="selection-workspace">
+    <div class="calc-page-container">
+
+        <!-- Header -->
+        <div class="workspace-header">
+            <span class="step-badge">Step 3: Table Selection</span>
+            <h1 class="calc-main-title">Select Table Area</h1>
+            <p class="calc-subtitle">
+                Define the range of rows and columns to persist in the database for <strong>{{ calc.title }}</strong>.
+            </p>
+        </div>
+
+        <div class="workspace-grid">
+            <!-- Left Panel: Interactive File Grid -->
+            <div class="grid-container">
+                <div class="grid-toolbar">
+                    <span class="grid-title">Uploaded File Grid Viewer</span>
+                    <button type="button" class="btn-reset" onclick="resetRange()" style="padding: 4px 10px; font-size: 0.75rem; height: auto;">
+                        <i data-lucide="rotate-ccw" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>Reset Range
+                    </button>
+                </div>
+                <div class="grid-scroll">
+                    <table class="source-table" id="sourceTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                {% if grid %}
+                                    {% for j in range(grid[0]|length) %}
+                                        <th>Col {{ j + 1 }}</th>
+                                    {% endfor %}
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in grid %}
+                            {% set row_idx = loop.index0 %}
+                            <tr>
+                                <th style="background:#f8fafc; font-weight:600; text-align:center; position:sticky; left:0; z-index:5; box-shadow: 1px 0 0 #e2e8f0;">{{ row_idx + 1 }}</th>
+                                {% for cell in row %}
+                                <td class="grid-cell" data-row="{{ row_idx }}" data-col="{{ loop.index0 }}">
+                                    {{ cell }}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Panel: Controls & Preview -->
+            <div class="control-panel">
+                <div class="instructions-card">
+                    <p><strong>How to Select:</strong></p>
+                    <ul>
+                        <li>Click any cell to set the <strong>Start Cell</strong> (top-left of table, typically headers).</li>
+                        <li>Click another cell to set the <strong>End Cell</strong> (bottom-right).</li>
+                        <li>The selected area will be highlighted in blue.</li>
+                        <li>The very first row of your selection will become the <strong>Table Headers</strong>.</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="panel-heading" style="margin-bottom: 0.75rem;"><i data-lucide="eye"></i> Table Selection Preview</h3>
+                    <div class="preview-box" id="previewBox">
+                        <div class="preview-placeholder" id="previewPlaceholder">
+                            No selection made yet. Click cells in the grid viewer to highlight your table range.
+                        </div>
+                        <table class="preview-table" id="previewTable" style="display: none;">
+                            <thead id="previewHead"></thead>
+                            <tbody id="previewBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Form to Submit Selection -->
+                <form id="saveSelectionForm" method="POST" action="{{ url_for('select_table', calc_id=calc.id) }}">
+                    <input type="hidden" name="table_data" id="tableDataInput">
+                    
+                    <div style="font-size:0.85rem; color:#475569; display: flex; flex-direction: column; gap: 4px; margin-bottom: 1rem;">
+                        <div><strong>Selection Summary:</strong></div>
+                        <div id="selectionSummary">Start: —, End: — (0 rows x 0 cols)</div>
+                    </div>
+
+                    <div class="action-row">
+                        <a href="{{ url_for('setup_calculator', calc_id=calc.id) }}" class="btn-reset">
+                            Back to Setup
+                        </a>
+                        <button type="submit" class="btn-calculate" id="btnSaveTable" disabled>
+                            <i data-lucide="check"></i> Save &amp; Finish
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let startCell = null; // {r, c}
+    let endCell = null;   // {r, c}
+
+    const tableCells = document.querySelectorAll('.grid-cell');
+    
+    tableCells.forEach(cell => {
+        cell.addEventListener('click', () => {
+            const r = parseInt(cell.getAttribute('data-row'), 10);
+            const c = parseInt(cell.getAttribute('data-col'), 10);
+
+            if (startCell === null) {
+                // Set start cell
+                startCell = { r, c };
+                endCell = { r, c };
+                updateSelection();
+            } else if (endCell !== null && (startCell.r === endCell.r && startCell.c === endCell.c)) {
+                // Set end cell
+                endCell = { r, c };
+                updateSelection();
+            } else {
+                // Reset and set start cell again
+                startCell = { r, c };
+                endCell = { r, c };
+                updateSelection();
+            }
+        });
+    });
+
+    function resetRange() {
+        startCell = null;
+        endCell = null;
+        updateSelection();
+    }
+
+    function updateSelection() {
+        // Clear all states
+        tableCells.forEach(cell => {
+            cell.classList.remove('selected-start', 'selected-end', 'in-range');
+            cell.parentElement.classList.remove('header-row');
+        });
+
+        const saveBtn = document.getElementById('btnSaveTable');
+        const summaryText = document.getElementById('selectionSummary');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const previewTable = document.getElementById('previewTable');
+        const tableInput = document.getElementById('tableDataInput');
+
+        if (!startCell || !endCell) {
+            saveBtn.disabled = true;
+            summaryText.textContent = "Start: —, End: — (0 rows x 0 cols)";
+            previewPlaceholder.style.display = 'block';
+            previewTable.style.display = 'none';
+            tableInput.value = '';
+            return;
+        }
+
+        // Bounding box range
+        const minR = Math.min(startCell.r, endCell.r);
+        const maxR = Math.max(startCell.r, endCell.r);
+        const minC = Math.min(startCell.c, endCell.c);
+        const maxC = Math.max(startCell.c, endCell.c);
+
+        // Highlight cells
+        tableCells.forEach(cell => {
+            const r = parseInt(cell.getAttribute('data-row'), 10);
+            const c = parseInt(cell.getAttribute('data-col'), 10);
+
+            if (r === startCell.r && c === startCell.c) {
+                cell.classList.add('selected-start');
+            } else if (r === endCell.r && c === endCell.c) {
+                cell.classList.add('selected-end');
+            }
+
+            if (r >= minR && r <= maxR && c >= minC && c <= maxC) {
+                cell.classList.add('in-range');
+                if (r === minR) {
+                    cell.parentElement.classList.add('header-row');
+                }
+            }
+        });
+
+        // Extract selected table data
+        const headers = [];
+        const rows = [];
+
+        // Build grid representation fromDOM elements
+        for (let r = minR; r <= maxR; r++) {
+            const rowData = [];
+            for (let c = minC; c <= maxC; c++) {
+                const td = document.querySelector(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+                rowData.push(td ? td.textContent.trim() : '');
+            }
+            if (r === minR) {
+                headers.push(...rowData);
+            } else {
+                rows.push(rowData);
+            }
+        }
+
+        const numRows = rows.length + 1; // including header
+        const numCols = headers.length;
+        summaryText.innerHTML = `Start Cell: <b>(${minR + 1}, ${minC + 1})</b>, End Cell: <b>(${maxR + 1}, ${maxC + 1})</b> <br> Dimension: <b>${numRows} rows x ${numCols} cols</b>`;
+
+        // Render preview table
+        const thead = document.getElementById('previewHead');
+        const tbody = document.getElementById('previewBody');
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+
+        const trHead = document.createElement('tr');
+        headers.forEach(h => {
+            const th = document.createElement('th');
+            th.textContent = h || '—';
+            trHead.appendChild(th);
+        });
+        thead.appendChild(trHead);
+
+        rows.forEach(r => {
+            const tr = document.createElement('tr');
+            r.forEach(c => {
+                const td = document.createElement('td');
+                td.textContent = c;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+
+        previewPlaceholder.style.display = 'none';
+        previewTable.style.display = 'table';
+
+        // Prepare form data
+        const selectedData = {
+            headers: headers,
+            rows: rows
+        };
+        tableInput.value = JSON.stringify(selectedData);
+        saveBtn.disabled = false;
+    }
+
+    // Initialize previously saved table (if any)
+    window.addEventListener('DOMContentLoaded', () => {
+        {% if config.get('saved_table') %}
+            // Find coordinate boundaries based on matching values if possible, or just start fresh
+        {% endif %}
+    });
+</script>
+{% endblock %}

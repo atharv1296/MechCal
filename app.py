@@ -114,9 +114,9 @@ MATH_NAMESPACE = {
     'SIN': math.sin,    'sin': math.sin,
     'COS': math.cos,    'cos': math.cos,
     'TAN': math.tan,    'tan': math.tan,
-    'ASIN': math.asin,  'asin': math.asin,
-    'ACOS': math.acos,  'acos': math.acos,
-    'ATAN': math.atan,  'atan': math.atan,
+    'ASIN': math.asin,  'asin': math.asin, 'arcsin': math.asin, 'ARCSIN': math.asin,
+    'ACOS': math.acos,  'acos': math.acos, 'arccos': math.acos, 'ARCCOS': math.acos,
+    'ATAN': math.atan,  'atan': math.atan, 'arctan': math.atan, 'ARCTAN': math.atan,
     'ATAN2': math.atan2,'atan2': math.atan2,
     'SINH': math.sinh,  'sinh': math.sinh,
     'COSH': math.cosh,  'cosh': math.cosh,
@@ -149,6 +149,61 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def allowed_table_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'csv', 'xlsx', 'xls', 'pdf'}
+
+def parse_data_file(file_path):
+    ext = file_path.rsplit('.', 1)[1].lower() if '.' in file_path else ''
+    if ext == 'csv':
+        import csv
+        rows = []
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                for r in reader:
+                    rows.append(r)
+        except UnicodeDecodeError:
+            with open(file_path, 'r', encoding='latin-1') as f:
+                reader = csv.reader(f)
+                for r in reader:
+                    rows.append(r)
+        return rows
+    elif ext in ('xlsx', 'xls'):
+        import openpyxl
+        rows = []
+        try:
+            wb = openpyxl.load_workbook(file_path, data_only=True)
+            sheet = wb.active
+            for row in sheet.iter_rows(values_only=True):
+                rows.append([str(cell) if cell is not None else "" for cell in row])
+        except Exception as e:
+            print("Excel parsing error:", e)
+        return rows
+    elif ext == 'pdf':
+        import pdfplumber
+        rows = []
+        try:
+            with pdfplumber.open(file_path) as pdf:
+                for page in pdf.pages:
+                    tables = page.extract_tables()
+                    if tables:
+                        for table in tables:
+                            for row in table:
+                                rows.append([str(cell) if cell is not None else "" for cell in row])
+                    else:
+                        text = page.extract_text()
+                        if text:
+                            for line in text.split('\n'):
+                                parts = [p.strip() for p in line.split('  ') if p.strip()]
+                                if not parts:
+                                    parts = line.split()
+                                if parts:
+                                    rows.append(parts)
+        except Exception as e:
+            print("PDF parsing error:", e)
+        return rows
+    return []
 
 db = SQLAlchemy(app)
 
@@ -458,13 +513,19 @@ def create_form():
             flash(f"A tool with the name '{title}' already exists. Please use a unique title.", "error")
             return render_template('create_form.html')
 
+        # Get count inputs from request form
+        num_inputs = int(data.get('num_inputs', 1))
+        num_outputs = int(data.get('num_outputs', 1))
+        num_constants = int(data.get('num_constants', 0))
+        num_dropdowns = int(data.get('num_dropdowns', 0))
+
         # DEFAULT COUNTS for dynamic setup
         config = {
             'title':         title,
-            'num_inputs':    1,
-            'num_outputs':   1,
-            'num_constants': 0,
-            'num_dropdowns': 0,
+            'num_inputs':    num_inputs,
+            'num_outputs':   num_outputs,
+            'num_constants': num_constants,
+            'num_dropdowns': num_dropdowns,
             'inputs': [], 'outputs': [], 'constants': [], 'dropdowns': [],
             'ref_images': []
         }
@@ -515,7 +576,6 @@ def edit_form(calc_id):
     return render_template('create_form.html', calc=calc, config=config, is_edit=True)
 
 @app.route('/setup/<int:calc_id>', methods=['GET', 'POST'])
-
 @admin_required
 def setup_calculator(calc_id):
     calc   = Calculator.query.get_or_404(calc_id)
@@ -524,6 +584,12 @@ def setup_calculator(calc_id):
     if request.method == 'POST':
         data = request.form
         label_error = None
+
+        # Get global precision setting
+        try:
+            global_precision = int(data.get('global_precision', 4))
+        except ValueError:
+            global_precision = 4
 
         # 1. Collect dynamic fields from form data
         def get_dynamic_fields(prefix):
@@ -569,7 +635,8 @@ def setup_calculator(calc_id):
             'num_constants': num_constants,
             'num_dropdowns': num_dropdowns,
             'inputs': inputs, 'constants': constants, 
-            'outputs': outputs, 'dropdowns': dropdowns
+            'outputs': outputs, 'dropdowns': dropdowns,
+            'global_precision': global_precision
         })
 
         # 3. Global Uniqueness Check
@@ -585,6 +652,44 @@ def setup_calculator(calc_id):
                 label_error = f"'{lbl}' is a reserved system keyword. Please use a different name."
                 return render_template('setup_calculator.html', calc=calc, config=preview_config, label_error=label_error)
 
+        # 4.5. Formula Syntax Validation Check
+        mock_namespace = {}
+        for f in inputs:
+            mock_namespace[f['label']] = 1
+        for f in constants:
+            try:
+                mock_namespace[f['label']] = float(f['value'])
+            except ValueError:
+                mock_namespace[f['label']] = 1
+        for f in dropdowns:
+            mock_namespace[f['label']] = 1
+        
+        mock_namespace.update(MATH_NAMESPACE)
+
+        for i, out in enumerate(outputs):
+            formula = out['formula'].strip()
+            label = out['label'].strip()
+
+            if not formula:
+                label_error = f"Formula for output '{label}' cannot be empty."
+                return render_template('setup_calculator.html', calc=calc, config=preview_config, label_error=label_error)
+
+            if re.search(r'[^0-9a-zA-Z_\s\+\-\*\/\(\)\.\,\%\^\:]', formula):
+                label_error = f"Formula for output '{label}' contains disallowed or unsafe characters."
+                return render_template('setup_calculator.html', calc=calc, config=preview_config, label_error=label_error)
+
+            try:
+                eval(formula, {"__builtins__": {}}, mock_namespace)
+            except (ZeroDivisionError, ValueError, OverflowError, FloatingPointError):
+                pass
+            except Exception as e:
+                label_error = f"Invalid formula in '{label}': {str(e)} (Formula: '{formula}')"
+                return render_template('setup_calculator.html', calc=calc, config=preview_config, label_error=label_error)
+
+            # Add reference for subsequent formulas
+            mock_namespace[f'op{i+1}'] = 1
+            mock_namespace[label] = 1
+
         # 5. Success! Update real config
         config.update({
             'num_inputs': num_inputs,
@@ -592,7 +697,8 @@ def setup_calculator(calc_id):
             'num_constants': num_constants,
             'num_dropdowns': num_dropdowns,
             'inputs': inputs, 'constants': constants, 
-            'outputs': outputs, 'dropdowns': dropdowns
+            'outputs': outputs, 'dropdowns': dropdowns,
+            'global_precision': global_precision
         })
 
         # ── Handle Image Uploads ──────────────────────────────────────────────
@@ -611,12 +717,65 @@ def setup_calculator(calc_id):
         # Preserve existing images unless replaced
         config['images'] = existing_images + new_images
 
+        # ── Handle Analysis Data Table File Upload ───────────────────────────
+        analysis_file = request.files.get('analysis_table_file')
+        redirect_to_select = False
+        if analysis_file and analysis_file.filename and allowed_table_file(analysis_file.filename):
+            ext = analysis_file.filename.rsplit('.', 1)[1].lower()
+            fname = f"analysis_table_{calc.id}.{ext}"
+            fpath = os.path.join(app.config['UPLOAD_FOLDER'], fname)
+            analysis_file.save(fpath)
+            config['analysis_file_path'] = fname
+            redirect_to_select = True
+
         calc.config = json.dumps(config)
         db.session.commit()
 
+        if redirect_to_select:
+            return redirect(url_for('select_table', calc_id=calc.id))
         return redirect(url_for('use_calculator', calc_id=calc.id))
 
     return render_template('setup_calculator.html', calc=calc, config=config)
+
+
+@app.route('/select-table/<int:calc_id>', methods=['GET', 'POST'])
+@login_required
+def select_table(calc_id):
+    calc = Calculator.query.get_or_404(calc_id)
+    config = json.loads(calc.config)
+    
+    file_name = config.get('analysis_file_path')
+    if not file_name:
+        flash("No analysis file has been uploaded for this calculator. Please upload one first.", "warning")
+        return redirect(url_for('setup_calculator', calc_id=calc.id))
+        
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_name)
+    if not os.path.exists(file_path):
+        flash("The uploaded analysis file could not be found. Please upload it again.", "danger")
+        return redirect(url_for('setup_calculator', calc_id=calc.id))
+        
+    if request.method == 'POST':
+        table_data_str = request.form.get('table_data')
+        if table_data_str:
+            try:
+                table_data = json.loads(table_data_str)
+                config['saved_table'] = table_data
+                calc.config = json.dumps(config)
+                db.session.commit()
+                flash("Data table saved successfully!", "success")
+                return redirect(url_for('use_calculator', calc_id=calc.id))
+            except Exception as e:
+                flash(f"Error saving table: {str(e)}", "danger")
+        else:
+            flash("No table selection data received.", "danger")
+            
+    # GET request
+    grid = parse_data_file(file_path)
+    if not grid:
+        flash("Could not extract any data grid from the file. Please check if the file is empty or corrupted.", "danger")
+        return redirect(url_for('setup_calculator', calc_id=calc.id))
+        
+    return render_template('select_table.html', calc=calc, config=config, grid=grid)
 
 
 @app.route('/calculator/<int:calc_id>', methods=['GET', 'POST'])
@@ -708,6 +867,29 @@ def use_calculator(calc_id):
             db.session.add(cr)
             db.session.commit()
 
+        # Check if requested via AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            ta_values = {}
+            for i, inp in enumerate(config.get('inputs', [])):
+                ta_values[inp['label']] = float(data.get(f'input_{i}', 0.0))
+            for const in config.get('constants', []):
+                ta_values[const['label']] = float(const['value'])
+            for r in results:
+                if not r.get('error'):
+                    ta_values[r['label']] = r['value']
+
+            outputs_html = render_template('outputs_partial.html', 
+                                           calc=calc, 
+                                           config=config, 
+                                           results=results, 
+                                           now=datetime.utcnow().strftime('%d %b %Y, %H:%M UTC'), 
+                                           enumerate=enumerate)
+            return jsonify({
+                'success': not calc_error,
+                'html': outputs_html,
+                'ta_values': ta_values
+            })
+
     return render_template('calculator.html', calc=calc, config=config,
                            results=results, error=error, form_vals=form_vals)
 
@@ -717,13 +899,21 @@ def use_calculator(calc_id):
 def delete_calculator(calc_id):
     calc = Calculator.query.get_or_404(calc_id)
     # Also delete uploaded images for this calculator
-    config = json.loads(calc.config)
-    for img in config.get('images', []):
-        fpath = os.path.join(app.config['UPLOAD_FOLDER'], img['filename'])
-        if os.path.exists(fpath):
-            os.remove(fpath)
+    try:
+        config = json.loads(calc.config)
+        for img in config.get('images', []):
+            fpath = os.path.join(app.config['UPLOAD_FOLDER'], img['filename'])
+            if os.path.exists(fpath):
+                try:
+                    os.remove(fpath)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
     db.session.delete(calc)
     db.session.commit()
+    flash('Calculator deleted successfully.', 'success')
     return redirect(url_for('index'))
 
 
