@@ -1,0 +1,81 @@
+<h2 class="panel-heading">
+    <i data-lucide="bar-chart-3"></i> Computation Results
+</h2>
+
+{% if results %}
+{% for r in results %}
+<div class="result-card {% if r.error %}result-error{% else %}result-ok{% endif %}"
+    style="position: relative;">
+    <div class="result-label">
+        {{ r.label }}
+    </div>
+    {% if not r.error %}
+    <div style="position: absolute; top: 12px; right: 12px;">
+        <select class="round-select" onchange="applyRounding(this)"
+            style="font-size:0.75rem; padding:2px 4px; border-radius:4px; border:1px solid var(--border-light); background: #fff; cursor: pointer; color: #444;">
+            {% set default_precision = config.get('global_precision', 4) %}
+            <option value="none" {% if default_precision == 'none' %}selected{% endif %}>Round: None</option>
+            {% for p in range(7) %}
+            <option value="{{ p }}" {% if default_precision | string == p | string %}selected{% endif %}>{{ p }} dec</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+    {% if r.error %}
+    <div class="error-val">
+        <i data-lucide="alert-circle" style="width:16px; vertical-align:middle;"></i>
+        Formula Error
+    </div>
+    <div class="result-formula error-msg">{{ r.error }}</div>
+    {% else %}
+    {% set default_precision = config.get('global_precision', 4) %}
+    <div class="result-value" data-raw-value="{{ r.value }}">
+        {% if default_precision == 'none' %}
+            {{ r.value }}
+        {% else %}
+            {{ "%.*f" | format(default_precision | int, r.value) }}
+        {% endif %}
+        <span class="result-unit"
+            style="font-size: 1rem; color: #64748b; font-weight: 400;">{{ r.unit or '' }}</span>
+    </div>
+    <div class="result-formula">
+        Formula: <code>{{ r.formula }}</code>
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+
+<div class="result-timestamp">
+    <i data-lucide="check-circle-2"></i>
+    Computed &amp; verified at {{ now }}
+</div>
+
+<!-- ── PDF REPORT ACTION ──────────────────────────────── -->
+<div class="report-action-wrap">
+    <button type="button" class="btn-generate-pdf" onclick="openReportModal()">
+        <i data-lucide="file-text"></i> Generate PDF Report
+    </button>
+    <p class="report-hint">Includes inputs, results, and reference images.</p>
+</div>
+
+{% else %}
+<!-- Placeholder slots -->
+{% if config.get('outputs') %}
+{% for out in config['outputs'] %}
+<div class="result-card result-pending">
+    <div class="result-label">
+        {{ out['label'] }}
+    </div>
+    <div class="result-value">— <span class="result-unit"
+            style="font-size: 1rem; color: #64748b; font-weight: 400;">{{ out.get('unit', '')
+            }}</span></div>
+    <div class="result-formula">Formula: <code>{{ out['formula'] }}</code></div>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="results-placeholder">
+    <i data-lucide="play-circle" style="width:44px; height:44px;"></i>
+    <p>Provide inputs and click <strong>Compute Results</strong> to execute.</p>
+</div>
+{% endif %}

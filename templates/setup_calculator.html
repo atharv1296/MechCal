@@ -36,6 +36,70 @@
             </div>
             {% endif %}
 
+            <!-- GLOBAL SETTINGS -->
+            <div class="setup-section">
+                <div class="setup-section-header">
+                    <span class="setup-section-icon"><i data-lucide="settings"></i></span>
+                    <h2>Global Settings</h2>
+                </div>
+                <p class="setup-section-desc">
+                    Configure general parameters and display settings for this calculator.
+                </p>
+                <div style="max-width: 400px; background: rgba(0,75,80,0.03); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-light);">
+                    <label class="form-label" for="global-precision" style="font-weight:600; color:var(--ac-teal-dark);">
+                        Global Decimal Precision <span class="required">*</span>
+                    </label>
+                    <select name="global_precision" id="global-precision" class="form-input" style="background:#fff; margin-top: 0.5rem;">
+                        {% set prec = config.get('global_precision', 4) %}
+                        {% for p in range(7) %}
+                        <option value="{{ p }}" {% if prec | int == p %}selected{% endif %}>{{ p }} decimal places</option>
+                        {% endfor %}
+                    </select>
+                    <span class="form-hint" style="margin-top: 0.5rem; display:block;">
+                        Defines the default decimal places displayed for all computed outputs. Users can still change individual fields dynamically.
+                    </span>
+                </div>
+            </div>
+
+            <!-- DATA TABLE FILE UPLOAD -->
+            <div class="setup-section">
+                <div class="setup-section-header">
+                    <span class="setup-section-icon"><i data-lucide="table-2"></i></span>
+                    <h2>Analysis Data Table File</h2>
+                </div>
+                <p class="setup-section-desc">
+                    Upload a reference data table (PDF, CSV, Excel) to enable automatic matching analysis in the tool.
+                </p>
+                <div style="max-width: 500px; background: rgba(0,75,80,0.03); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 1rem;">
+                    <div>
+                        <label class="form-label" for="analysis-table-file" style="font-weight:600; color:var(--ac-teal-dark);">
+                            Upload Data File (.csv, .xlsx, .xls, .pdf)
+                        </label>
+                        <input type="file" name="analysis_table_file" id="analysis-table-file" class="form-input" style="background:#fff; margin-top: 0.5rem; padding: 0.5rem;" accept=".csv, .xlsx, .xls, .pdf">
+                        <span class="form-hint" style="margin-top: 0.5rem; display:block;">
+                            Max file size: 16MB. If you upload a file, you will be redirected to choose the exact table range to save.
+                        </span>
+                    </div>
+
+                    {% if config.get('analysis_file_path') %}
+                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid #10b981; padding: 1rem; border-radius: 6px; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div style="display: flex; align-items: center; gap: 8px; color: #065f46; font-weight: 600;">
+                            <i data-lucide="check-circle" style="width: 18px; height: 18px; color: #10b981;"></i>
+                            <span>Active Data File: {{ config.get('analysis_file_path') }}</span>
+                        </div>
+                        {% if config.get('saved_table') %}
+                        <div style="font-size: 0.85rem; color: #047857;">
+                            Saved Table: {{ config.get('saved_table').get('headers')|length }} columns x {{ config.get('saved_table').get('rows')|length }} rows
+                        </div>
+                        {% endif %}
+                        <a href="{{ url_for('select_table', calc_id=calc.id) }}" class="btn-ghost-dark" style="margin-top: 0.5rem; text-decoration: none; text-align: center; border-color: #10b981; color: #065f46; background: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: 500; border-radius: 4px;">
+                            <i data-lucide="grid" style="width:16px;height:16px;"></i> Edit / Reselect Saved Table Range
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- INPUT FIELDS -->
             <div class="setup-section">
                 <div class="setup-section-header">
@@ -70,56 +134,102 @@
                             <div style="flex:1;">
                                 <select name="input_unit_{{ i }}" class="form-input" id="input-unit-{{ i }}">
                                     <option value="">Unit (None)</option>
-                                    <optgroup label="Length">
-                                        <option value="m">m</option>
-                                        <option value="mm">mm</option>
-                                        <option value="cm">cm</option>
-                                        <option value="in">in</option>
-                                        <option value="ft">ft</option>
+                                    <optgroup label="SI Base Units">
+                                        <option value="m">meter (m)</option>
+                                        <option value="kg">kilogram (kg)</option>
+                                        <option value="s">second (s)</option>
+                                        <option value="A">ampere (A)</option>
+                                        <option value="K">kelvin (K)</option>
+                                        <option value="mol">mole (mol)</option>
+                                        <option value="cd">candela (cd)</option>
                                     </optgroup>
-                                    <optgroup label="Area & Volume">
-                                        <option value="m^2">m^2</option>
-                                        <option value="mm^2">mm^2</option>
-                                        <option value="cm^2">cm^2</option>
-                                        <option value="m^3">m^3</option>
+                                    <optgroup label="Mechanical & Motion">
+                                        <option value="m/s">meter per second (m/s)</option>
+                                        <option value="m/s^2">meter per second² (m/s²)</option>
+                                        <option value="m/s^3">jerk (m/s³)</option>
+                                        <option value="rad">radian (rad)</option>
+                                        <option value="rad/s">radian per second (rad/s)</option>
+                                        <option value="rad/s^2">radian per second² (rad/s²)</option>
+                                        <option value="N">newton (N)</option>
+                                        <option value="N*s">newton second (N·s)</option>
+                                        <option value="N*m">newton meter (N·m)</option>
+                                        <option value="kg*m^2">mass moment of inertia (kg·m²)</option>
+                                        <option value="kg/m^3">kilogram per cubic meter (kg/m³)</option>
+                                        <option value="N/m">surface tension / stiffness (N/m)</option>
+                                        <option value="N*s/m">damping coefficient (N·s/m)</option>
                                     </optgroup>
-                                    <optgroup label="Mass/Weight">
-                                        <option value="kg">kg</option>
-                                        <option value="g">g</option>
-                                        <option value="lb">lb</option>
+                                    <optgroup label="Space & Geometry">
+                                        <option value="m^2">square meter (m²)</option>
+                                        <option value="m^3">cubic meter (m³)</option>
+                                        <option value="m^4">moment of area (m⁴)</option>
+                                        <option value="sr">steradian (sr)</option>
                                     </optgroup>
-                                    <optgroup label="Force/Pressure">
-                                        <option value="N">N</option>
-                                        <option value="kN">kN</option>
-                                        <option value="lbf">lbf</option>
-                                        <option value="Pa">Pa</option>
-                                        <option value="kPa">kPa</option>
-                                        <option value="MPa">MPa</option>
+                                    <optgroup label="Pressure & Stress">
+                                        <option value="Pa">pascal (Pa)</option>
+                                        <option value="kPa">kilopascal (kPa)</option>
+                                        <option value="MPa">megapascal (MPa)</option>
+                                        <option value="GPa">gigapascal (GPa)</option>
                                         <option value="psi">psi</option>
-                                        <option value="N/m^2">N/m^2</option>
+                                        <option value="Pa^-1">compressibility (Pa⁻¹)</option>
+                                        <option value="MPa*m^0.5">fracture toughness (MPa·m⁰˙⁵)</option>
                                     </optgroup>
-                                    <optgroup label="Energy/Power">
-                                        <option value="J">J</option>
-                                        <option value="kJ">kJ</option>
-                                        <option value="W">W</option>
-                                        <option value="kW">kW</option>
-                                        <option value="HP">HP</option>
+                                    <optgroup label="Energy & Power">
+                                        <option value="J">joule (J)</option>
+                                        <option value="kJ">kilojoule (kJ)</option>
+                                        <option value="W">watt (W)</option>
+                                        <option value="kW">kilowatt (kW)</option>
+                                        <option value="HP">horsepower (HP)</option>
                                     </optgroup>
-                                    <optgroup label="Speed">
-                                        <option value="m/s">m/s</option>
-                                        <option value="km/h">km/h</option>
+                                    <optgroup label="Thermal Units">
+                                        <option value="°C">degree Celsius (°C)</option>
+                                        <option value="J/kg*K">spec. heat cap. / entropy (J/(kg·K))</option>
+                                        <option value="W/m*K">thermal conductivity (W/(m·K))</option>
+                                        <option value="W/m^2*K">heat transfer coeff. (W/(m²·K))</option>
+                                        <option value="W/m^2">heat flux (W/m²)</option>
+                                        <option value="K/W">thermal resistance (K/W)</option>
+                                        <option value="J/K">entropy (J/K)</option>
+                                        <option value="K^-1">expansion coefficient (K⁻¹)</option>
+                                        <option value="J/m^2">surface energy (J/m²)</option>
+                                        <option value="m^3/kg">specific volume (m³/kg)</option>
+                                    </optgroup>
+                                    <optgroup label="Viscosity & Flow">
+                                        <option value="Pa*s">dynamic viscosity (Pa·s)</option>
+                                        <option value="m^2/s">kinematic viscosity (m²/s)</option>
+                                        <option value="m^3/s">volumetric flow rate (m³/s)</option>
+                                        <option value="kg/s">mass flow rate (kg/s)</option>
+                                    </optgroup>
+                                    <optgroup label="Electrical & Electromagnetic">
+                                        <option value="C">coulomb (C)</option>
+                                        <option value="V">volt (V)</option>
+                                        <option value="F">farad (F)</option>
+                                        <option value="ohm">ohm (Ω)</option>
+                                        <option value="S">siemens (S)</option>
+                                        <option value="Wb">weber (Wb)</option>
+                                        <option value="T">tesla (T)</option>
+                                        <option value="H">henry (H)</option>
+                                    </optgroup>
+                                    <optgroup label="Light & Radiation">
+                                        <option value="lm">lumen (lm)</option>
+                                        <option value="lx">lux (lx)</option>
+                                        <option value="Bq">becquerel (Bq)</option>
+                                        <option value="Gy">gray (Gy)</option>
+                                        <option value="Sv">sievert (Sv)</option>
+                                        <option value="kat">katal (kat)</option>
+                                    </optgroup>
+                                    <optgroup label="Common Engineering">
+                                        <option value="mm">millimeter (mm)</option>
+                                        <option value="cm">centimeter (cm)</option>
+                                        <option value="in">inch (in)</option>
+                                        <option value="ft">foot (ft)</option>
+                                        <option value="g">gram (g)</option>
+                                        <option value="lb">pound (lb)</option>
                                         <option value="RPM">RPM</option>
-                                        <option value="rad/s">rad/s</option>
-                                    </optgroup>
-                                    <optgroup label="Temperature">
-                                        <option value="°C">°C</option>
-                                        <option value="°F">°F</option>
-                                        <option value="K">K</option>
-                                    </optgroup>
-                                    <optgroup label="Other">
-                                        <option value="%">%</option>
-                                        <option value="deg">deg</option>
-                                        <option value="rad">rad</option>
+                                        <option value="deg">degree (deg)</option>
+                                        <option value="%">percent (%)</option>
+                                        <option value="um">micrometer (µm)</option>
+                                        <option value="mm/rev">feed rate (mm/rev)</option>
+                                        <option value="m^3/N*m">wear rate (m³/(N·m))</option>
+                                        <option value="Hz">hertz (Hz)</option>
                                     </optgroup>
                                 </select>
                                 <script>document.getElementById('input-unit-{{ i }}').value = "{{ current_input.get('unit', '') if current_input else '' }}";</script>
@@ -303,56 +413,102 @@
                 <div style="flex:1;">
                     <select name="output_unit_{{ i }}" class="form-input" id="output-unit-{{ i }}">
                         <option value="">Unit (None)</option>
-                        <optgroup label="Length">
-                            <option value="m">m</option>
-                            <option value="mm">mm</option>
-                            <option value="cm">cm</option>
-                            <option value="in">in</option>
-                            <option value="ft">ft</option>
+                        <optgroup label="SI Base Units">
+                            <option value="m">meter (m)</option>
+                            <option value="kg">kilogram (kg)</option>
+                            <option value="s">second (s)</option>
+                            <option value="A">ampere (A)</option>
+                            <option value="K">kelvin (K)</option>
+                            <option value="mol">mole (mol)</option>
+                            <option value="cd">candela (cd)</option>
                         </optgroup>
-                        <optgroup label="Area & Volume">
-                            <option value="m^2">m^2</option>
-                            <option value="mm^2">mm^2</option>
-                            <option value="cm^2">cm^2</option>
-                            <option value="m^3">m^3</option>
+                        <optgroup label="Mechanical & Motion">
+                            <option value="m/s">meter per second (m/s)</option>
+                            <option value="m/s^2">meter per second² (m/s²)</option>
+                            <option value="m/s^3">jerk (m/s³)</option>
+                            <option value="rad">radian (rad)</option>
+                            <option value="rad/s">radian per second (rad/s)</option>
+                            <option value="rad/s^2">radian per second² (rad/s²)</option>
+                            <option value="N">newton (N)</option>
+                            <option value="N*s">newton second (N·s)</option>
+                            <option value="N*m">newton meter (N·m)</option>
+                            <option value="kg*m^2">mass moment of inertia (kg·m²)</option>
+                            <option value="kg/m^3">kilogram per cubic meter (kg/m³)</option>
+                            <option value="N/m">surface tension / stiffness (N/m)</option>
+                            <option value="N*s/m">damping coefficient (N·s/m)</option>
                         </optgroup>
-                        <optgroup label="Mass/Weight">
-                            <option value="kg">kg</option>
-                            <option value="g">g</option>
-                            <option value="lb">lb</option>
+                        <optgroup label="Space & Geometry">
+                            <option value="m^2">square meter (m²)</option>
+                            <option value="m^3">cubic meter (m³)</option>
+                            <option value="m^4">moment of area (m⁴)</option>
+                            <option value="sr">steradian (sr)</option>
                         </optgroup>
-                        <optgroup label="Force/Pressure">
-                            <option value="N">N</option>
-                            <option value="kN">kN</option>
-                            <option value="lbf">lbf</option>
-                            <option value="Pa">Pa</option>
-                            <option value="kPa">kPa</option>
-                            <option value="MPa">MPa</option>
+                        <optgroup label="Pressure & Stress">
+                            <option value="Pa">pascal (Pa)</option>
+                            <option value="kPa">kilopascal (kPa)</option>
+                            <option value="MPa">megapascal (MPa)</option>
+                            <option value="GPa">gigapascal (GPa)</option>
                             <option value="psi">psi</option>
-                            <option value="N/m^2">N/m^2</option>
+                            <option value="Pa^-1">compressibility (Pa⁻¹)</option>
+                            <option value="MPa*m^0.5">fracture toughness (MPa·m⁰˙⁵)</option>
                         </optgroup>
-                        <optgroup label="Energy/Power">
-                            <option value="J">J</option>
-                            <option value="kJ">kJ</option>
-                            <option value="W">W</option>
-                            <option value="kW">kW</option>
-                            <option value="HP">HP</option>
+                        <optgroup label="Energy & Power">
+                            <option value="J">joule (J)</option>
+                            <option value="kJ">kilojoule (kJ)</option>
+                            <option value="W">watt (W)</option>
+                            <option value="kW">kilowatt (kW)</option>
+                            <option value="HP">horsepower (HP)</option>
                         </optgroup>
-                        <optgroup label="Speed">
-                            <option value="m/s">m/s</option>
-                            <option value="km/h">km/h</option>
+                        <optgroup label="Thermal Units">
+                            <option value="°C">degree Celsius (°C)</option>
+                            <option value="J/kg*K">spec. heat cap. / entropy (J/(kg·K))</option>
+                            <option value="W/m*K">thermal conductivity (W/(m·K))</option>
+                            <option value="W/m^2*K">heat transfer coeff. (W/(m²·K))</option>
+                            <option value="W/m^2">heat flux (W/m²)</option>
+                            <option value="K/W">thermal resistance (K/W)</option>
+                            <option value="J/K">entropy (J/K)</option>
+                            <option value="K^-1">expansion coefficient (K⁻¹)</option>
+                            <option value="J/m^2">surface energy (J/m²)</option>
+                            <option value="m^3/kg">specific volume (m³/kg)</option>
+                        </optgroup>
+                        <optgroup label="Viscosity & Flow">
+                            <option value="Pa*s">dynamic viscosity (Pa·s)</option>
+                            <option value="m^2/s">kinematic viscosity (m²/s)</option>
+                            <option value="m^3/s">volumetric flow rate (m³/s)</option>
+                            <option value="kg/s">mass flow rate (kg/s)</option>
+                        </optgroup>
+                        <optgroup label="Electrical & Electromagnetic">
+                            <option value="C">coulomb (C)</option>
+                            <option value="V">volt (V)</option>
+                            <option value="F">farad (F)</option>
+                            <option value="ohm">ohm (Ω)</option>
+                            <option value="S">siemens (S)</option>
+                            <option value="Wb">weber (Wb)</option>
+                            <option value="T">tesla (T)</option>
+                            <option value="H">henry (H)</option>
+                        </optgroup>
+                        <optgroup label="Light & Radiation">
+                            <option value="lm">lumen (lm)</option>
+                            <option value="lx">lux (lx)</option>
+                            <option value="Bq">becquerel (Bq)</option>
+                            <option value="Gy">gray (Gy)</option>
+                            <option value="Sv">sievert (Sv)</option>
+                            <option value="kat">katal (kat)</option>
+                        </optgroup>
+                        <optgroup label="Common Engineering">
+                            <option value="mm">millimeter (mm)</option>
+                            <option value="cm">centimeter (cm)</option>
+                            <option value="in">inch (in)</option>
+                            <option value="ft">foot (ft)</option>
+                            <option value="g">gram (g)</option>
+                            <option value="lb">pound (lb)</option>
                             <option value="RPM">RPM</option>
-                            <option value="rad/s">rad/s</option>
-                        </optgroup>
-                        <optgroup label="Temperature">
-                            <option value="°C">°C</option>
-                            <option value="°F">°F</option>
-                            <option value="K">K</option>
-                        </optgroup>
-                        <optgroup label="Other">
-                            <option value="%">%</option>
-                            <option value="deg">deg</option>
-                            <option value="rad">rad</option>
+                            <option value="deg">degree (deg)</option>
+                            <option value="%">percent (%)</option>
+                            <option value="um">micrometer (µm)</option>
+                            <option value="mm/rev">feed rate (mm/rev)</option>
+                            <option value="m^3/N*m">wear rate (m³/(N·m))</option>
+                            <option value="Hz">hertz (Hz)</option>
                         </optgroup>
                     </select>
                     <script>document.getElementById('output-unit-{{ i }}').value = "{{ current_out.get('unit', '') if current_out else '' }}";</script>
@@ -444,14 +600,103 @@
         let html = '';
         const unitOptionsHTML = `
             <option value="">Unit (None)</option>
-            <optgroup label="Length"><option value="m">m</option><option value="mm">mm</option><option value="cm">cm</option><option value="in">in</option><option value="ft">ft</option></optgroup>
-            <optgroup label="Area & Volume"><option value="m^2">m^2</option><option value="mm^2">mm^2</option><option value="cm^2">cm^2</option><option value="m^3">m^3</option></optgroup>
-            <optgroup label="Mass/Weight"><option value="kg">kg</option><option value="g">g</option><option value="lb">lb</option></optgroup>
-            <optgroup label="Force/Pressure"><option value="N">N</option><option value="kN">kN</option><option value="lbf">lbf</option><option value="Pa">Pa</option><option value="kPa">kPa</option><option value="MPa">MPa</option><option value="psi">psi</option><option value="N/m^2">N/m^2</option></optgroup>
-            <optgroup label="Energy/Power"><option value="J">J</option><option value="kJ">kJ</option><option value="W">W</option><option value="kW">kW</option><option value="HP">HP</option></optgroup>
-            <optgroup label="Speed"><option value="m/s">m/s</option><option value="km/h">km/h</option><option value="RPM">RPM</option><option value="rad/s">rad/s</option></optgroup>
-            <optgroup label="Temperature"><option value="°C">°C</option><option value="°F">°F</option><option value="K">K</option></optgroup>
-            <optgroup label="Other"><option value="%">%</option><option value="deg">deg</option><option value="rad">rad</option></optgroup>
+            <optgroup label="SI Base Units">
+                <option value="m">meter (m)</option>
+                <option value="kg">kilogram (kg)</option>
+                <option value="s">second (s)</option>
+                <option value="A">ampere (A)</option>
+                <option value="K">kelvin (K)</option>
+                <option value="mol">mole (mol)</option>
+                <option value="cd">candela (cd)</option>
+            </optgroup>
+            <optgroup label="Mechanical & Motion">
+                <option value="m/s">meter per second (m/s)</option>
+                <option value="m/s^2">meter per second² (m/s²)</option>
+                <option value="m/s^3">jerk (m/s³)</option>
+                <option value="rad">radian (rad)</option>
+                <option value="rad/s">radian per second (rad/s)</option>
+                <option value="rad/s^2">radian per second² (rad/s²)</option>
+                <option value="N">newton (N)</option>
+                <option value="N*s">newton second (N·s)</option>
+                <option value="N*m">newton meter (N·m)</option>
+                <option value="kg*m^2">mass moment of inertia (kg·m²)</option>
+                <option value="kg/m^3">kilogram per cubic meter (kg/m³)</option>
+                <option value="N/m">surface tension / stiffness (N/m)</option>
+                <option value="N*s/m">damping coefficient (N·s/m)</option>
+            </optgroup>
+            <optgroup label="Space & Geometry">
+                <option value="m^2">square meter (m²)</option>
+                <option value="m^3">cubic meter (m³)</option>
+                <option value="m^4">moment of area (m⁴)</option>
+                <option value="sr">steradian (sr)</option>
+            </optgroup>
+            <optgroup label="Pressure & Stress">
+                <option value="Pa">pascal (Pa)</option>
+                <option value="kPa">kilopascal (kPa)</option>
+                <option value="MPa">megapascal (MPa)</option>
+                <option value="GPa">gigapascal (GPa)</option>
+                <option value="psi">psi</option>
+                <option value="Pa^-1">compressibility (Pa⁻¹)</option>
+                <option value="MPa*m^0.5">fracture toughness (MPa·m⁰˙⁵)</option>
+            </optgroup>
+            <optgroup label="Energy & Power">
+                <option value="J">joule (J)</option>
+                <option value="kJ">kilojoule (kJ)</option>
+                <option value="W">watt (W)</option>
+                <option value="kW">kilowatt (kW)</option>
+                <option value="HP">horsepower (HP)</option>
+            </optgroup>
+            <optgroup label="Thermal Units">
+                <option value="°C">degree Celsius (°C)</option>
+                <option value="J/kg*K">spec. heat cap. / entropy (J/(kg·K))</option>
+                <option value="W/m*K">thermal conductivity (W/(m·K))</option>
+                <option value="W/m^2*K">heat transfer coeff. (W/(m²·K))</option>
+                <option value="W/m^2">heat flux (W/m²)</option>
+                <option value="K/W">thermal resistance (K/W)</option>
+                <option value="J/K">entropy (J/K)</option>
+                <option value="K^-1">expansion coefficient (K⁻¹)</option>
+                <option value="J/m^2">surface energy (J/m²)</option>
+                <option value="m^3/kg">specific volume (m³/kg)</option>
+            </optgroup>
+            <optgroup label="Viscosity & Flow">
+                <option value="Pa*s">dynamic viscosity (Pa·s)</option>
+                <option value="m^2/s">kinematic viscosity (m²/s)</option>
+                <option value="m^3/s">volumetric flow rate (m³/s)</option>
+                <option value="kg/s">mass flow rate (kg/s)</option>
+            </optgroup>
+            <optgroup label="Electrical & Electromagnetic">
+                <option value="C">coulomb (C)</option>
+                <option value="V">volt (V)</option>
+                <option value="F">farad (F)</option>
+                <option value="ohm">ohm (Ω)</option>
+                <option value="S">siemens (S)</option>
+                <option value="Wb">weber (Wb)</option>
+                <option value="T">tesla (T)</option>
+                <option value="H">henry (H)</option>
+            </optgroup>
+            <optgroup label="Light & Radiation">
+                <option value="lm">lumen (lm)</option>
+                <option value="lx">lux (lx)</option>
+                <option value="Bq">becquerel (Bq)</option>
+                <option value="Gy">gray (Gy)</option>
+                <option value="Sv">sievert (Sv)</option>
+                <option value="kat">katal (kat)</option>
+            </optgroup>
+            <optgroup label="Common Engineering">
+                <option value="mm">millimeter (mm)</option>
+                <option value="cm">centimeter (cm)</option>
+                <option value="in">inch (in)</option>
+                <option value="ft">foot (ft)</option>
+                <option value="g">gram (g)</option>
+                <option value="lb">pound (lb)</option>
+                <option value="RPM">RPM</option>
+                <option value="deg">degree (deg)</option>
+                <option value="%">percent (%)</option>
+                <option value="um">micrometer (µm)</option>
+                <option value="mm/rev">feed rate (mm/rev)</option>
+                <option value="m^3/N*m">wear rate (m³/(N·m))</option>
+                <option value="Hz">hertz (Hz)</option>
+            </optgroup>
         `;
 
         if (type === 'input') {
@@ -717,6 +962,12 @@
             { name: 'sin', cat: 'Trig', fn: true },
             { name: 'cos', cat: 'Trig', fn: true },
             { name: 'tan', cat: 'Trig', fn: true },
+            { name: 'asin', cat: 'Trig', fn: true },
+            { name: 'acos', cat: 'Trig', fn: true },
+            { name: 'atan', cat: 'Trig', fn: true },
+            { name: 'arcsin', cat: 'Trig', fn: true },
+            { name: 'arccos', cat: 'Trig', fn: true },
+            { name: 'arctan', cat: 'Trig', fn: true },
             { name: 'degrees', cat: 'Trig', fn: true },
             { name: 'radians', cat: 'Trig', fn: true },
             { name: 'LOG', cat: 'Log/Exp', fn: true },
