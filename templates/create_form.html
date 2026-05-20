@@ -30,8 +30,7 @@
                 <label class="form-label" for="calc-title">
                     Workspace Title <span class="required">*</span>
                 </label>
-                <input type="text" name="title" id="calc-title" class="form-input" required
-                    placeholder="e.g. Shaft Diameter Calculation, Torque Analysis…" maxlength="150">
+                <input type="text" name="title" id="calc-title" class="form-input" required placeholder="e.g. Shaft Diameter Calculation, Torque Analysis…" maxlength="150" value="{{ calc.title if is_edit else '' }}">
                 <span class="form-hint">
                     This identifier will appear across the platform and in the calculation audit log.
                 </span>
@@ -49,8 +48,8 @@
                         <div class="counter-control">
                             <button type="button" class="counter-btn" id="dec-inputs"
                                 onclick="changeCount('num_inputs', -1)">−</button>
-                            <input type="number" name="num_inputs" id="num_inputs" value="1" min="1" max="20"
-                                class="counter-input" readonly>
+                            <input type="number" name="num_inputs" id="num_inputs" value="{{ config.num_inputs if is_edit else 1 }}" min="1" max="20"
+                                 class="counter-input" readonly>
                             <button type="button" class="counter-btn" id="inc-inputs"
                                 onclick="changeCount('num_inputs', 1)">+</button>
                         </div>
@@ -63,8 +62,8 @@
                         <div class="counter-control">
                             <button type="button" class="counter-btn" id="dec-outputs"
                                 onclick="changeCount('num_outputs', -1)">−</button>
-                            <input type="number" name="num_outputs" id="num_outputs" value="1" min="1" max="20"
-                                class="counter-input" readonly>
+                            <input type="number" name="num_outputs" id="num_outputs" value="{{ config.num_outputs if is_edit else 1 }}" min="1" max="20"
+                                 class="counter-input" readonly>
                             <button type="button" class="counter-btn" id="inc-outputs"
                                 onclick="changeCount('num_outputs', 1)">+</button>
                         </div>
@@ -77,8 +76,8 @@
                         <div class="counter-control">
                             <button type="button" class="counter-btn" id="dec-constants"
                                 onclick="changeCount('num_constants', -1)">−</button>
-                            <input type="number" name="num_constants" id="num_constants" value="0" min="0" max="20"
-                                class="counter-input" readonly>
+                            <input type="number" name="num_constants" id="num_constants" value="{{ config.num_constants if is_edit else 0 }}" min="0" max="20"
+                                 class="counter-input" readonly>
                             <button type="button" class="counter-btn" id="inc-constants"
                                 onclick="changeCount('num_constants', 1)">+</button>
                         </div>
@@ -91,8 +90,8 @@
                         <div class="counter-control">
                             <button type="button" class="counter-btn" id="dec-dropdowns"
                                 onclick="changeCount('num_dropdowns', -1)">−</button>
-                            <input type="number" name="num_dropdowns" id="num_dropdowns" value="0" min="0" max="10"
-                                class="counter-input" readonly>
+                            <input type="number" name="num_dropdowns" id="num_dropdowns" value="{{ config.num_dropdowns if is_edit else 0 }}" min="0" max="10"
+                                 class="counter-input" readonly>
                             <button type="button" class="counter-btn" id="inc-dropdowns"
                                 onclick="changeCount('num_dropdowns', 1)">+</button>
                         </div>

@@ -122,16 +122,15 @@
                 </div>
                 <h3 class="calc-card-title">{{ calc.title }}</h3>
                 <div class="calc-card-actions">
-                    <a href="{{ url_for('use_calculator', calc_id=calc.id) }}"
-                       class="btn-use" id="launch-calc-{{ calc.id }}">Launch Tool</a>
+                    <a href="{{ url_for('use_calculator', calc_id=calc.id) }}" class="btn-use"
+                        id="launch-calc-{{ calc.id }}">Launch Tool</a>
                     {% if current_user_role == 'admin' %}
-                    <a href="{{ url_for('edit_form', calc_id=calc.id) }}" 
-                       class="btn-edit-tool" title="Edit Structure" id="edit-calc-{{ calc.id }}"
-                       onclick="return confirm('Do you want to update this tool structure?');">
-                        <i data-lucide="settings-2"></i>
+                    <a href="{{ url_for('setup_calculator', calc_id=calc.id) }}" class="btn-edit-tool" title="Edit Formulas & Fields" id="setup-calc-{{ calc.id }}">
+                        <i data-lucide="settings"></i>
                     </a>
+
                     <form method="POST" action="{{ url_for('delete_calculator', calc_id=calc.id) }}"
-                          onsubmit="return confirm('Archive this engineering tool?');" style="display:inline;">
+                        onsubmit="return confirm('Archive this engineering tool?');" style="display:inline;">
                         <button type="submit" class="btn-delete" title="Delete" id="delete-calc-{{ calc.id }}">
                             <i data-lucide="trash-2"></i>
                         </button>
