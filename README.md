@@ -97,11 +97,43 @@ The Atlas Copco Engineering Calculator is a structured toolset that enables user
 
 ---
 
-## Future Improvements
+## Database & Cloudinary Configuration
 
-* User authentication
-* Export functionality (CSV/PDF)
-* Advanced analytics
-* Role-based access control
-* Real-time validation
+The platform supports **Neon PostgreSQL** for production relational data storage and **Cloudinary** for persistent cloud asset/image hosting.
+
+### Required Environment Variables
+
+Create a `.env` file in the project root (see `.env.example`):
+
+```env
+# 1. Neon PostgreSQL Connection String
+DATABASE_URL=postgresql://<user>:<password>@<neon_host>.neon.tech/<dbname>?sslmode=require
+
+# 2. Cloudinary Connection URL
+CLOUDINARY_URL=cloudinary://<api_key>:<api_secret>@<cloud_name>
+
+# 3. Security
+SECRET_KEY=your_production_secret_key
+```
+
+### Data Migration (SQLite to Neon PostgreSQL)
+
+To safely copy existing users, calculators, and calculations from your local SQLite database (`instance/calculators.db`) to Neon PostgreSQL and sync local reference images to Cloudinary, run:
+
+```bash
+python migrate_data.py
+```
+
+*Note: The migration script is 100% idempotent and can be safely re-run without creating duplicate records.*
+
+---
+
+## Deployment on Render
+
+1. Connect your repository to Render.
+2. In your Render Dashboard, add the following **Environment Variables**:
+   * `DATABASE_URL`: Your Neon PostgreSQL connection string.
+   * `CLOUDINARY_URL`: Your Cloudinary API connection string.
+   * `SECRET_KEY`: A secure random string.
+3. Deploy! Render will install dependencies from `requirements.txt` and start with Gunicorn.
 

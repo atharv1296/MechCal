@@ -10,3 +10,11 @@ services:
         generateValue: true
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: DATABASE_URL
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
