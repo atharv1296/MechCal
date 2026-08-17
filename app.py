@@ -4,14 +4,33 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
+from dotenv import load_dotenv
 import json
 import math
 import statistics as _stats
 import random as _random
 import re
 import os
+import io
+import tempfile
+import urllib.request
+import requests
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
+from authlib.integrations.flask_client import OAuth
+
+# Load local environment variables if .env is present
+load_dotenv()
+
+# Detect production environment (e.g. Render, or explicit environment variable)
+IS_PRODUCTION = bool(
+    os.environ.get('RENDER') or
+    os.environ.get('FLASK_ENV') == 'production' or
+    os.environ.get('ENVIRONMENT') == 'production'
+)
 
 
 PYTHON_KEYWORDS = {
@@ -35,7 +54,6 @@ def _mode(*a):
     except Exception:  return a[0] if a else 0
 def _stdev(*a):        return _stats.stdev(a) if len(a) >= 2 else 0
 def _var(*a):          return _stats.variance(a) if len(a) >= 2 else 0
-def _product(*a):      r = 1; [setattr([], '', None) for x in a if [r := r * x]]; return r
 def _product(*a):
     r = 1
     for x in a: r *= x
@@ -137,10 +155,67 @@ MATH_NAMESPACE = {
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'atlas_copco_secret_2024')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///calculators.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ─── Image Upload Config ──────────────────────────────────────────────────────
+# ─── Database Configuration (Neon PostgreSQL & Local SQLite) ─────────────────────
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    # SQLAlchemy requires postgresql:// instead of legacy postgres://
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+elif IS_PRODUCTION:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is required in production (Render). "
+        "Please configure your Neon PostgreSQL connection string in the environment."
+    )
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///calculators.db'
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+}
+
+# ─── Cloudinary Configuration ──────────────────────────────────────────────────
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
+CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
+CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
+CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
+
+IS_CLOUDINARY_CONFIGURED = bool(
+    CLOUDINARY_URL or
+    (CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET)
+)
+
+if IS_CLOUDINARY_CONFIGURED:
+    if CLOUDINARY_URL:
+        cloudinary.config(cloudinary_url=CLOUDINARY_URL, secure=True)
+    else:
+        cloudinary.config(
+            cloud_name=CLOUDINARY_CLOUD_NAME,
+            api_key=CLOUDINARY_API_KEY,
+            api_secret=CLOUDINARY_API_SECRET,
+            secure=True
+        )
+
+# ─── Google OAuth 2.0 Configuration ────────────────────────────────────────────
+GOOGLE_CLIENT_ID = (os.environ.get('GOOGLE_CLIENT_ID') or '').strip() or None
+GOOGLE_CLIENT_SECRET = (os.environ.get('GOOGLE_CLIENT_SECRET') or '').strip() or None
+
+oauth = OAuth(app)
+if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
+    oauth.register(
+        name='google',
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+        client_kwargs={
+            'scope': 'openid email profile'
+        }
+    )
+
+# ─── Local Upload Config 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'xlsx'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -153,38 +228,132 @@ def allowed_file(filename):
 def allowed_table_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'csv', 'xlsx', 'xls', 'pdf'}
 
-def parse_data_file(file_path):
-    ext = file_path.rsplit('.', 1)[1].lower() if '.' in file_path else ''
+def upload_media(file_storage, folder="mechcal/images", resource_type="auto"):
+    """
+    Uploads a file to Cloudinary.
+    In development without Cloudinary configured, falls back to local UPLOAD_FOLDER.
+    In production, Cloudinary is strictly required.
+    Returns: dict {'url': str, 'public_id': str or None, 'filename': str}
+    """
+    safe_name = secure_filename(file_storage.filename)
+    if IS_CLOUDINARY_CONFIGURED:
+        try:
+            file_storage.seek(0)
+            res = cloudinary.uploader.upload(
+                file_storage,
+                folder=folder,
+                resource_type=resource_type,
+                use_filename=True,
+                unique_filename=True
+            )
+            return {
+                'url': res.get('secure_url'),
+                'public_id': res.get('public_id'),
+                'filename': safe_name
+            }
+        except Exception as e:
+            if IS_PRODUCTION:
+                raise RuntimeError(f"Cloudinary upload failed in production: {e}")
+            app.logger.warning(f"Cloudinary upload failed ({e}), falling back to local disk.")
+    elif IS_PRODUCTION:
+        raise RuntimeError(
+            "Cloudinary credentials (CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME/KEY/SECRET) "
+            "must be configured in production."
+        )
+
+    # Local fallback for local development only
+    fname = f"{int(datetime.utcnow().timestamp())}_{safe_name}"
+    fpath = os.path.join(app.config['UPLOAD_FOLDER'], fname)
+    file_storage.seek(0)
+    file_storage.save(fpath)
+    return {
+        'url': url_for('static', filename=f'uploads/{fname}'),
+        'public_id': None,
+        'filename': fname
+    }
+
+def delete_media(image_data):
+    """
+    Deletes media from Cloudinary (if public_id is available) and/or local storage.
+    """
+    if not image_data:
+        return
+    public_id = image_data.get('public_id') if isinstance(image_data, dict) else None
+    if IS_CLOUDINARY_CONFIGURED and public_id:
+        try:
+            cloudinary.uploader.destroy(public_id)
+        except Exception as e:
+            app.logger.error(f"Cloudinary delete failed: {e}")
+
+    filename = image_data.get('filename') if isinstance(image_data, dict) else (image_data if isinstance(image_data, str) else None)
+    if filename and not filename.startswith('http://') and not filename.startswith('https://'):
+        fpath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if os.path.exists(fpath):
+            try:
+                os.remove(fpath)
+            except Exception:
+                pass
+
+def parse_data_file(file_path_or_url):
+    """
+    Parses CSV, XLSX, XLS, or PDF files from either a local file path or remote Cloudinary URL.
+    Safely processes files in memory via BytesIO/StringIO without Windows file lock/permission errors.
+    """
+    content_bytes = None
+    ext = ''
+
+    if file_path_or_url.startswith('http://') or file_path_or_url.startswith('https://'):
+        resp = requests.get(file_path_or_url, timeout=25)
+        resp.raise_for_status()
+        content_bytes = resp.content
+        url_clean = file_path_or_url.split('?')[0]
+        if '.' in url_clean:
+            ext = url_clean.rsplit('.', 1)[1].lower()
+    else:
+        if os.path.exists(file_path_or_url):
+            with open(file_path_or_url, 'rb') as f:
+                content_bytes = f.read()
+            if '.' in file_path_or_url:
+                ext = file_path_or_url.rsplit('.', 1)[1].lower()
+
+    if not content_bytes:
+        return []
+
+    # If extension could not be determined from URL/path, detect by header signature
+    if not ext or ext not in ('csv', 'xlsx', 'xls', 'pdf'):
+        if content_bytes.startswith(b'%PDF'):
+            ext = 'pdf'
+        elif content_bytes.startswith(b'PK\x03\x04'):
+            ext = 'xlsx'
+        else:
+            ext = 'csv'
+
+    rows = []
     if ext == 'csv':
         import csv
-        rows = []
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                for r in reader:
-                    rows.append(r)
+            text_data = content_bytes.decode('utf-8')
         except UnicodeDecodeError:
-            with open(file_path, 'r', encoding='latin-1') as f:
-                reader = csv.reader(f)
-                for r in reader:
-                    rows.append(r)
-        return rows
+            text_data = content_bytes.decode('latin-1', errors='replace')
+        except Exception:
+            text_data = ""
+        if text_data:
+            reader = csv.reader(io.StringIO(text_data))
+            rows = list(reader)
     elif ext in ('xlsx', 'xls'):
         import openpyxl
-        rows = []
         try:
-            wb = openpyxl.load_workbook(file_path, data_only=True)
+            wb = openpyxl.load_workbook(io.BytesIO(content_bytes), data_only=True)
             sheet = wb.active
             for row in sheet.iter_rows(values_only=True):
                 rows.append([str(cell) if cell is not None else "" for cell in row])
+            wb.close()
         except Exception as e:
             print("Excel parsing error:", e)
-        return rows
     elif ext == 'pdf':
         import pdfplumber
-        rows = []
         try:
-            with pdfplumber.open(file_path) as pdf:
+            with pdfplumber.open(io.BytesIO(content_bytes)) as pdf:
                 for page in pdf.pages:
                     tables = page.extract_tables()
                     if tables:
@@ -202,8 +371,7 @@ def parse_data_file(file_path):
                                     rows.append(parts)
         except Exception as e:
             print("PDF parsing error:", e)
-        return rows
-    return []
+    return rows
 
 db = SQLAlchemy(app)
 
@@ -212,8 +380,10 @@ db = SQLAlchemy(app)
 class User(db.Model):
     id           = db.Column(db.Integer, primary_key=True)
     username     = db.Column(db.String(80),  unique=True, nullable=False)
-    password     = db.Column(db.String(200), nullable=False)   # hashed
+    email        = db.Column(db.String(120), unique=True, nullable=True)
+    password     = db.Column(db.String(200), nullable=True)   # hashed, nullable for Google-only users
     role         = db.Column(db.String(20),  nullable=False, default='user')  # 'admin' or 'user'
+    google_id    = db.Column(db.String(100), unique=True, nullable=True)
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Calculator(db.Model):
@@ -231,20 +401,72 @@ class CalculationResult(db.Model):
     outputs       = db.Column(db.Text, nullable=False)   # JSON
     calculated_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-with app.app_context():
+def init_db_schema():
+    """Ensure tables and any newly added columns exist in SQLite or PostgreSQL."""
     db.create_all()
-    # Seed default users on first run
-    if not User.query.filter_by(username='admin').first():
+    with db.engine.connect() as conn:
+        dialect_name = db.engine.dialect.name
+        try:
+            if dialect_name == 'sqlite':
+                res = conn.execute(db.text("PRAGMA table_info('user')")).fetchall()
+                cols = [r[1] for r in res]
+                if 'email' not in cols:
+                    conn.execute(db.text("ALTER TABLE user ADD COLUMN email VARCHAR(120)"))
+                if 'google_id' not in cols:
+                    conn.execute(db.text("ALTER TABLE user ADD COLUMN google_id VARCHAR(100)"))
+                conn.commit()
+            elif dialect_name == 'postgresql':
+                conn.execute(db.text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS email VARCHAR(120)'))
+                conn.execute(db.text('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS google_id VARCHAR(100)'))
+                conn.execute(db.text('ALTER TABLE "user" ALTER COLUMN password DROP NOT NULL'))
+                conn.commit()
+        except Exception as e:
+            app.logger.warning(f"Database schema auto-migration notice: {e}")
+
+def generate_unique_username(base_name, email):
+    """Generates a clean and unique username for a new Google-authenticated user."""
+    clean_name = re.sub(r'[^a-zA-Z0-9_]', '', (base_name or '').lower().replace(' ', '_')).strip('_')
+    if not clean_name:
+        clean_name = email.split('@')[0].lower()
+        clean_name = re.sub(r'[^a-zA-Z0-9_]', '', clean_name).strip('_')
+    if not clean_name:
+        clean_name = 'user'
+
+    candidate = clean_name[:40]
+    counter = 1
+    while User.query.filter(db.func.lower(User.username) == candidate.lower()).first():
+        candidate = f"{clean_name[:35]}_{_random.randint(100, 9999)}"
+        counter += 1
+        if counter > 50:
+            candidate = f"user_{int(datetime.utcnow().timestamp())}"
+            break
+    return candidate
+
+with app.app_context():
+    init_db_schema()
+    # Seed default users on first run if not present
+    admin_user = User.query.filter_by(username='admin').first()
+    if not admin_user:
         db.session.add(User(username='admin',
+                            email='admin@atlascopco.com',
                             password=generate_password_hash('admin123'),
                             role='admin'))
-    if not User.query.filter_by(username='user').first():
+    elif not admin_user.email:
+        admin_user.email = 'admin@atlascopco.com'
+
+    std_user = User.query.filter_by(username='user').first()
+    if not std_user:
         db.session.add(User(username='user',
+                            email='user@atlascopco.com',
                             password=generate_password_hash('user123'),
                             role='user'))
+    elif not std_user.email:
+        std_user.email = 'user@atlascopco.com'
+
     db.session.commit()
 
-# ─── Jinja2 helpers ──────
+
+# ─── Jinja2 helpers ────────────────────────────────────────────────────────────
 
 # Use Python's built-in enumerate safely
 import builtins as _builtins
@@ -257,6 +479,28 @@ def from_json_filter(value):
     except Exception:
         return {}
 
+@app.template_filter('img_url')
+def img_url_filter(img):
+    """
+    Template filter to get the displayable URL for an image.
+    Supports Cloudinary URLs, dicts with 'url'/'filename', and legacy local strings.
+    """
+    if not img:
+        return ''
+    if isinstance(img, dict):
+        if img.get('url'):
+            return img['url']
+        if img.get('filename'):
+            fn = img['filename']
+            if fn.startswith('http://') or fn.startswith('https://'):
+                return fn
+            return url_for('static', filename=f'uploads/{fn}')
+    elif isinstance(img, str):
+        if img.startswith('http://') or img.startswith('https://'):
+            return img
+        return url_for('static', filename=f'uploads/{img}')
+    return ''
+
 @app.context_processor
 def inject_now():
     return {
@@ -264,6 +508,7 @@ def inject_now():
         'current_user_role': session.get('role'),
         'current_username':  session.get('username'),
     }
+
 
 # ─── Auth Decorators ──────────────────────────────────────────────────────────
 
@@ -426,21 +671,40 @@ def create_calc_pdf(calc_title, designer_name, inputs, outputs, image_paths, ta_
         pdf.ln(10)
         
         for i, img_data in enumerate(image_paths):
-            fpath = os.path.join(UPLOAD_FOLDER, img_data['filename'])
-            if os.path.exists(fpath):
-                # Calculate height to fit proportionately
-                # We aim for roughly half a page per image if possible
-                pdf.image(fpath, x=25, y=pdf.get_y(), w=160)
-                pdf.ln(95) # Approximate space for image
-                
-                pdf.set_font("helvetica", "I", 9)
-                pdf.set_text_color(100, 100, 100)
-                pdf.cell(0, 10, f"DOCUMENTATION FIG {i+1}: {img_data.get('caption', 'General Reference')}", 
-                         new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
-                pdf.ln(10)
-                
-                if (i+1) % 2 == 0 and i < len(image_paths) - 1:
-                    pdf.add_page()
+            img_src = img_data.get('url') if isinstance(img_data, dict) else None
+            img_fn = img_data.get('filename') if isinstance(img_data, dict) else (img_data if isinstance(img_data, str) else None)
+            img_caption = img_data.get('caption', 'General Reference') if isinstance(img_data, dict) else 'General Reference'
+
+            image_target = None
+            if img_src and (img_src.startswith('http://') or img_src.startswith('https://')):
+                try:
+                    req = urllib.request.Request(img_src, headers={'User-Agent': 'Mozilla/5.0'})
+                    with urllib.request.urlopen(req, timeout=15) as resp:
+                        image_target = io.BytesIO(resp.read())
+                except Exception as e:
+                    print(f"PDF generation error fetching remote image ({img_src}): {e}")
+            elif img_fn:
+                fpath = os.path.join(UPLOAD_FOLDER, img_fn)
+                if os.path.exists(fpath):
+                    image_target = fpath
+
+            if image_target:
+                try:
+                    # Calculate height to fit proportionately
+                    # We aim for roughly half a page per image if possible
+                    pdf.image(image_target, x=25, y=pdf.get_y(), w=160)
+                    pdf.ln(95) # Approximate space for image
+                    
+                    pdf.set_font("helvetica", "I", 9)
+                    pdf.set_text_color(100, 100, 100)
+                    pdf.cell(0, 10, f"DOCUMENTATION FIG {i+1}: {img_caption}", 
+                             new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
+                    pdf.ln(10)
+                    
+                    if (i+1) % 2 == 0 and i < len(image_paths) - 1:
+                        pdf.add_page()
+                except Exception as e:
+                    print(f"PDF generation error rendering image: {e}")
 
     return bytes(pdf.output())
 
@@ -448,24 +712,169 @@ def create_calc_pdf(calc_title, designer_name, inputs, outputs, image_paths, ta_
 
 # ── Auth routes ───────────────────────────────────────────────────────────────
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if 'user_id' in session:
+        return redirect(url_for('index'))
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        role = request.form.get('role', 'user').strip().lower()
+
+        # Validations
+        if not username:
+            error = 'Username is required.'
+        elif len(username) < 3 or len(username) > 50:
+            error = 'Username must be between 3 and 50 characters.'
+        elif not re.match(r'^[a-zA-Z0-9_.-]+$', username):
+            error = 'Username can only contain letters, numbers, dots, dashes, and underscores.'
+        elif not email or '@' not in email or '.' not in email.split('@')[-1]:
+            error = 'A valid email address is required.'
+        elif not password or len(password) < 6:
+            error = 'Password must be at least 6 characters long.'
+        elif role not in ('user', 'admin'):
+            error = 'Invalid role selected. Please choose User or Administrator.'
+        elif User.query.filter(db.func.lower(User.username) == username.lower()).first():
+            error = f'Username "{username}" is already taken. Please choose a different username.'
+        elif User.query.filter(db.func.lower(User.email) == email.lower()).first():
+            error = f'The email "{email}" is already registered. Please sign in or use another email.'
+        else:
+            new_user = User(
+                username=username,
+                email=email,
+                password=generate_password_hash(password),
+                role=role
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            flash(f'Account created successfully as {role.capitalize()}! You can now sign in.', 'success')
+            return redirect(url_for('login'))
+
+    return render_template('register.html', error=error)
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
         return redirect(url_for('index'))
     error = None
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
+        login_id = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-        user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password, password):
-            session['user_id']  = user.id
-            session['username'] = user.username
-            session['role']     = user.role
-            flash(f'Welcome back, {user.username}!', 'success')
-            next_url = request.args.get('next')
-            return redirect(next_url or url_for('index'))
-        error = 'Invalid username or password.'
+
+        if not login_id or not password:
+            error = 'Please provide both username/email and password.'
+        else:
+            # Query by username or email (case-insensitive)
+            user = User.query.filter(
+                (db.func.lower(User.username) == login_id.lower()) |
+                (db.func.lower(User.email) == login_id.lower())
+            ).first()
+
+            if user and user.password and check_password_hash(user.password, password):
+                session['user_id']  = user.id
+                session['username'] = user.username
+                session['role']     = user.role
+                flash(f'Welcome back, {user.username}!', 'success')
+                next_url = request.args.get('next')
+                return redirect(next_url or url_for('index'))
+            elif user and not user.password:
+                error = 'This account was created with Google Sign-In. Please click "Sign in with Google" below.'
+            else:
+                error = 'Invalid username/email or password.'
+
     return render_template('login.html', error=error)
+
+@app.route('/login/google')
+def login_google():
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        flash('Google Sign-In is not configured yet. Please configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env or environment.', 'warning')
+        return redirect(url_for('login'))
+    # Build redirect URI – use explicit env override if set, otherwise use url_for.
+    # This avoids the 127.0.0.1 vs localhost mismatch that causes Google's
+    # "redirect_uri_mismatch" (Error 400).
+    redirect_uri = os.environ.get('OAUTH_REDIRECT_URI') or url_for('google_callback', _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+
+@app.route('/login/google/callback')
+def google_callback():
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        flash('Google Sign-In is not configured.', 'error')
+        return redirect(url_for('login'))
+
+    try:
+        token = oauth.google.authorize_access_token()
+        user_info = token.get('userinfo')
+        if not user_info:
+            user_info = oauth.google.userinfo()
+    except Exception as e:
+        flash(f'Google authentication failed: {str(e)}', 'error')
+        return redirect(url_for('login'))
+
+    if not user_info:
+        flash('Failed to retrieve user information from Google.', 'error')
+        return redirect(url_for('login'))
+
+    google_id = user_info.get('sub')
+    email = (user_info.get('email') or '').strip().lower()
+    email_verified = user_info.get('email_verified', False)
+    name = user_info.get('name') or ''
+
+    if not google_id or not email:
+        flash('Unable to retrieve verified account details or email from Google.', 'error')
+        return redirect(url_for('login'))
+
+    # ── Case 1: Google ID already linked to an existing account ──────────
+    user = User.query.filter_by(google_id=google_id).first()
+    if user:
+        session['user_id'] = user.id
+        session['username'] = user.username
+        session['role'] = user.role
+        flash(f'Signed in with Google as {user.username} ({user.role.capitalize()}).', 'success')
+        return redirect(url_for('index'))
+
+    # ── Case 2 & 4: Existing account matches verified Google email ───────
+    user_by_email = User.query.filter(db.func.lower(User.email) == email).first()
+    if user_by_email:
+        if not email_verified:
+            flash('Your Google email is not verified. Please verify your email with Google to sign in.', 'error')
+            return redirect(url_for('login'))
+
+        # Link Google ID to the existing account
+        user_by_email.google_id = google_id
+        db.session.commit()
+
+        session['user_id'] = user_by_email.id
+        session['username'] = user_by_email.username
+        session['role'] = user_by_email.role
+        flash(f'Google account linked! Signed in as {user_by_email.username} ({user_by_email.role.capitalize()}).', 'success')
+        return redirect(url_for('index'))
+
+    # ── Case 3: Google email does NOT exist in database ─────────────────
+    if not email_verified:
+        flash('Your Google email is not verified. Please verify your email with Google to register.', 'error')
+        return redirect(url_for('login'))
+
+    # Create new normal user account (NEVER admin!)
+    new_username = generate_unique_username(name, email)
+    new_user = User(
+        username=new_username,
+        email=email,
+        password=None,
+        role='user',  # Strictly user, never admin
+        google_id=google_id
+    )
+    db.session.add(new_user)
+    db.session.commit()
+
+    session['user_id'] = new_user.id
+    session['username'] = new_user.username
+    session['role'] = 'user'
+    flash(f'Welcome to Atlas Copco Suite! Account created as User ({new_user.username}).', 'success')
+    return redirect(url_for('index'))
 
 
 @app.route('/logout')
@@ -707,12 +1116,10 @@ def setup_calculator(calc_id):
         for i in range(10):
             file = request.files.get(f'image_{i}')
             if file and file.filename and allowed_file(file.filename):
-                ext      = file.filename.rsplit('.', 1)[1].lower()
-                fname    = f"calc_{calc.id}_{i}_{secure_filename(file.filename)}"
-                fpath    = os.path.join(app.config['UPLOAD_FOLDER'], fname)
-                file.save(fpath)
-                caption  = data.get(f'image_caption_{i}', '').strip()
-                new_images.append({'filename': fname, 'caption': caption})
+                caption = data.get(f'image_caption_{i}', '').strip()
+                uploaded = upload_media(file, folder="mechcal/reference_images", resource_type="image")
+                uploaded['caption'] = caption
+                new_images.append(uploaded)
 
         # Preserve existing images unless replaced
         config['images'] = existing_images + new_images
@@ -721,11 +1128,10 @@ def setup_calculator(calc_id):
         analysis_file = request.files.get('analysis_table_file')
         redirect_to_select = False
         if analysis_file and analysis_file.filename and allowed_table_file(analysis_file.filename):
-            ext = analysis_file.filename.rsplit('.', 1)[1].lower()
-            fname = f"analysis_table_{calc.id}.{ext}"
-            fpath = os.path.join(app.config['UPLOAD_FOLDER'], fname)
-            analysis_file.save(fpath)
-            config['analysis_file_path'] = fname
+            uploaded_table = upload_media(analysis_file, folder="mechcal/data_tables", resource_type="auto")
+            config['analysis_file_path'] = uploaded_table.get('filename')
+            config['analysis_file_url'] = uploaded_table.get('url')
+            config['analysis_file_public_id'] = uploaded_table.get('public_id')
             redirect_to_select = True
 
         calc.config = json.dumps(config)
@@ -744,15 +1150,20 @@ def select_table(calc_id):
     calc = Calculator.query.get_or_404(calc_id)
     config = json.loads(calc.config)
     
+    file_url = config.get('analysis_file_url')
     file_name = config.get('analysis_file_path')
-    if not file_name:
+    file_target = file_url or file_name
+    
+    if not file_target:
         flash("No analysis file has been uploaded for this calculator. Please upload one first.", "warning")
         return redirect(url_for('setup_calculator', calc_id=calc.id))
         
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_name)
-    if not os.path.exists(file_path):
-        flash("The uploaded analysis file could not be found. Please upload it again.", "danger")
-        return redirect(url_for('setup_calculator', calc_id=calc.id))
+    if not file_target.startswith('http://') and not file_target.startswith('https://'):
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_name)
+        if not os.path.exists(file_path):
+            flash("The uploaded analysis file could not be found. Please upload it again.", "danger")
+            return redirect(url_for('setup_calculator', calc_id=calc.id))
+        file_target = file_path
         
     if request.method == 'POST':
         table_data_str = request.form.get('table_data')
@@ -770,7 +1181,7 @@ def select_table(calc_id):
             flash("No table selection data received.", "danger")
             
     # GET request
-    grid = parse_data_file(file_path)
+    grid = parse_data_file(file_target)
     if not grid:
         flash("Could not extract any data grid from the file. Please check if the file is empty or corrupted.", "danger")
         return redirect(url_for('setup_calculator', calc_id=calc.id))
@@ -898,18 +1309,18 @@ def use_calculator(calc_id):
 @admin_required
 def delete_calculator(calc_id):
     calc = Calculator.query.get_or_404(calc_id)
-    # Also delete uploaded images for this calculator
+    # Also delete uploaded images & table files for this calculator
     try:
         config = json.loads(calc.config)
         for img in config.get('images', []):
-            fpath = os.path.join(app.config['UPLOAD_FOLDER'], img['filename'])
-            if os.path.exists(fpath):
-                try:
-                    os.remove(fpath)
-                except Exception:
-                    pass
-    except Exception:
-        pass
+            delete_media(img)
+        if config.get('analysis_file_public_id') or config.get('analysis_file_path'):
+            delete_media({
+                'public_id': config.get('analysis_file_public_id'),
+                'filename': config.get('analysis_file_path')
+            })
+    except Exception as e:
+        app.logger.warning(f"Error cleaning up assets on calculator deletion: {e}")
 
     db.session.delete(calc)
     db.session.commit()
@@ -925,10 +1336,8 @@ def delete_image(calc_id, img_index):
     config = json.loads(calc.config)
     images = config.get('images', [])
     if 0 <= img_index < len(images):
-        fpath = os.path.join(app.config['UPLOAD_FOLDER'], images[img_index]['filename'])
-        if os.path.exists(fpath):
-            os.remove(fpath)
-        images.pop(img_index)
+        img_to_remove = images.pop(img_index)
+        delete_media(img_to_remove)
         config['images'] = images
         calc.config = json.dumps(config)
         db.session.commit()

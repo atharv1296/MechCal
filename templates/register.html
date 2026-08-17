@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Atlas Copco Engineering Calculator Suite — Secure Login" />
-    <title>Atlas Copco | Secure Login</title>
+    <meta name="description" content="Atlas Copco Engineering Calculator Suite — User & Admin Registration" />
+    <title>Atlas Copco | Create Account</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,7 +68,7 @@
             transition: color 0.2s;
         }
 
-        /* ── Top Utility Bar (identical to base.html) ── */
+        /* ── Top Utility Bar ── */
         .topbar {
             background: #002b30;
             color: rgba(255, 255, 255, 0.65);
@@ -83,20 +83,7 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        .topbar-item {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .topbar-item i {
-            width: 12px;
-            height: 12px;
-            stroke-width: 2;
-        }
-
-        /* ── Navbar (identical visual to base.html) ── */
+        /* ── Navbar ── */
         .navbar {
             height: 72px;
             background: var(--ac-teal);
@@ -148,7 +135,7 @@
         }
 
         /* ── Page Body ── */
-        .login-page {
+        .register-page {
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -157,24 +144,12 @@
             padding: 3rem 1.5rem;
         }
 
-        /* ── Section eyebrow (same pattern as index.html) ── */
-        .section-eyebrow {
-            font-family: var(--font-body);
-            font-weight: 700;
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: var(--ac-teal-mid);
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
         /* ── Two-column layout ── */
-        .login-wrapper {
+        .register-wrapper {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1040px;
             display: grid;
-            grid-template-columns: 1fr 440px;
+            grid-template-columns: 1fr 480px;
             gap: 0;
             border: 1px solid var(--border);
             box-shadow: var(--shadow-lifted);
@@ -187,12 +162,11 @@
             padding: 3.5rem 3rem;
             display: flex;
             flex-direction: column;
-            gap: 2.5rem;
+            gap: 2rem;
             position: relative;
             overflow: hidden;
         }
 
-        /* subtle diagonal overlay */
         .brand-panel::after {
             content: '';
             position: absolute;
@@ -241,12 +215,11 @@
 
         .brand-panel-desc {
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.65);
             line-height: 1.7;
-            max-width: 340px;
         }
 
-        /* Role info cards */
+        /* Role descriptions list */
         .role-list {
             display: flex;
             flex-direction: column;
@@ -303,33 +276,22 @@
 
         .role-text p {
             font-size: 0.82rem;
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 0.55);
             line-height: 1.4;
         }
 
-        .role-cred {
-            display: inline-block;
-            margin-top: 6px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.75rem;
-            color: var(--ac-gold);
-            background: rgba(184, 151, 42, 0.12);
-            padding: 2px 8px;
-            border: 1px solid rgba(184, 151, 42, 0.25);
-        }
-
-        /* ── Right panel: Login form ── */
-        .login-form-panel {
+        /* ── Right panel: Registration form ── */
+        .register-form-panel {
             background: var(--bg-white);
-            padding: 3.5rem 2.75rem;
+            padding: 3rem 2.5rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
 
         .form-header {
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
+            margin-bottom: 1.75rem;
+            padding-bottom: 1.25rem;
             border-bottom: 1px solid var(--border-light);
         }
 
@@ -341,7 +303,7 @@
             letter-spacing: 0.12em;
             color: var(--ac-teal-mid);
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
         }
 
         .form-header h2 {
@@ -354,28 +316,27 @@
         .form-header p {
             font-size: 0.88rem;
             color: var(--text-muted);
-            margin-top: 0.35rem;
+            margin-top: 0.25rem;
         }
 
-        /* Gold accent underline — Atlas Copco-style section divider */
         .gold-bar {
             width: 36px;
             height: 3px;
             background: var(--ac-gold);
-            margin-top: 12px;
+            margin-top: 10px;
         }
 
-        /* Error banner */
+        /* Error & Flash banner */
         .error-banner {
             background: #fdecea;
             border-left: 4px solid #c0392b;
             color: #922b21;
             padding: 0.85rem 1rem;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
 
         .error-banner i {
@@ -384,34 +345,21 @@
             flex-shrink: 0;
         }
 
-        /* Flash banner */
         .flash-banner {
             background: #eaf4ec;
             border-left: 4px solid #2e7d45;
             color: #1e5530;
             padding: 0.85rem 1rem;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 1.5rem;
-        }
-
-        .flash-banner.flash-warning {
-            background: #fdf8e6;
-            border-left-color: var(--ac-gold);
-            color: #7a5c00;
-        }
-
-        .flash-banner.flash-info {
-            background: #e8f2f2;
-            border-left-color: var(--ac-teal);
-            color: var(--ac-teal-dark);
+            margin-bottom: 1.25rem;
         }
 
         /* Form fields */
         .form-group {
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.15rem;
         }
 
         .form-group label {
@@ -422,7 +370,7 @@
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--text-muted);
-            margin-bottom: 0.45rem;
+            margin-bottom: 0.4rem;
         }
 
         .input-wrap {
@@ -440,9 +388,10 @@
             pointer-events: none;
         }
 
-        .form-input {
+        .form-input,
+        .form-select {
             width: 100%;
-            padding: 0.75rem 0.875rem 0.75rem 2.4rem;
+            padding: 0.72rem 0.875rem 0.72rem 2.4rem;
             font-family: var(--font-body);
             font-size: 0.95rem;
             color: var(--text-dark);
@@ -453,7 +402,16 @@
             transition: border-color 0.2s, background 0.2s;
         }
 
-        .form-input:focus {
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            cursor: pointer;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
             border-color: var(--ac-teal);
             background: #ffffff;
             box-shadow: inset 0 0 0 1px var(--ac-teal);
@@ -487,10 +445,10 @@
             color: var(--ac-teal);
         }
 
-        /* Submit button — matches .nav-cta */
+        /* Submit button */
         .btn-submit {
             width: 100%;
-            padding: 0.9rem 1.5rem;
+            padding: 0.88rem 1.5rem;
             background: var(--ac-teal);
             color: #ffffff;
             font-family: var(--font-body);
@@ -595,9 +553,9 @@
             color: var(--ac-teal-dark);
         }
 
-        /* Bottom note */
+        /* Footer */
         .form-footer {
-            margin-top: 1.75rem;
+            margin-top: 1.5rem;
             padding-top: 1.25rem;
             border-top: 1px solid var(--border-light);
             font-size: 0.78rem;
@@ -606,7 +564,6 @@
             line-height: 1.6;
         }
 
-        /* ── Footer ── */
         .page-footer {
             background: var(--ac-teal);
         }
@@ -640,18 +597,18 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
-        /* ── Responsive ── */
+        /* Responsive */
         @media (max-width: 760px) {
-            .login-wrapper {
+            .register-wrapper {
                 grid-template-columns: 1fr;
-                max-width: 440px;
+                max-width: 460px;
             }
 
             .brand-panel {
                 display: none;
             }
 
-            .login-form-panel {
+            .register-form-panel {
                 padding: 2.5rem 1.75rem;
             }
 
@@ -682,11 +639,11 @@
         </div>
     </nav>
 
-    <!-- ── Flash messages (from redirects) ── -->
+    <!-- ── Flash messages ── -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     {% for category, message in messages %}
-    <div style="max-width:1000px;margin:1.25rem auto;padding:0 1.5rem;">
+    <div style="max-width:1040px;margin:1.25rem auto;padding:0 1.5rem;">
         <div class="flash-banner flash-{{ category }}">
             <i
                 data-lucide="{% if category == 'warning' %}alert-triangle{% elif category == 'error' %}x-circle{% elif category == 'success' %}check-circle{% else %}info{% endif %}"></i>
@@ -697,9 +654,9 @@
     {% endif %}
     {% endwith %}
 
-    <!-- ── Login Page Body ── -->
-    <main class="login-page">
-        <div class="login-wrapper">
+    <!-- ── Register Page Body ── -->
+    <main class="register-page">
+        <div class="register-wrapper">
 
             <!-- Left: Brand Info Panel -->
             <div class="brand-panel">
@@ -709,54 +666,77 @@
                 </div>
 
                 <h2>
-                    Engineering<br>
-                    <em>Precision</em><br>
-                    at Every Step
+                    Register for<br>
+                    <em>Engineering Suite</em><br>
+                    Access
                 </h2>
 
                 <p class="brand-panel-desc">
-                    The Atlas Copco Engineering Calculator Suite empowers your team
-                    with dynamic, formula-driven computation tools — built for
-                    reliability and precision across all mechanical engineering disciplines.
+                    Create your internal credentials to standardize engineering computations,
+                    log calculations, and access purpose-built industrial calculators.
                 </p>
 
+                <div class="role-list">
+                    <div class="role-item admin">
+                        <div class="role-icon-box"><i data-lucide="shield"></i></div>
+                        <div class="role-text">
+                            <h4>Administrator Account</h4>
+                            <p>Author and publish new calculation templates, formulas, and diagrams.</p>
+                        </div>
+                    </div>
+                    <div class="role-item user">
+                        <div class="role-icon-box"><i data-lucide="user-check"></i></div>
+                        <div class="role-text">
+                            <h4>Standard User Account</h4>
+                            <p>Execute calculators, run lookups, and export official PDF reports.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Right: Login Form -->
-            <div class="login-form-panel">
+            <!-- Right: Registration Form -->
+            <div class="register-form-panel">
                 <div class="form-header">
-                    <span class="eyebrow">Secure Access</span>
-                    <h2>Sign In</h2>
-                    <p>Enter your credentials to access the suite.</p>
+                    <span class="eyebrow">Onboarding</span>
+                    <h2>Create Account</h2>
+                    <p>Enter your details to create your suite account.</p>
                     <div class="gold-bar"></div>
                 </div>
 
                 {% if error %}
-                <div class="error-banner" id="login-error-msg">
+                <div class="error-banner" id="register-error-msg">
                     <i data-lucide="alert-circle"></i>
                     {{ error }}
                 </div>
                 {% endif %}
 
-                <form method="POST" action="{{ url_for('login') }}" id="login-form">
-                    <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
-
+                <form method="POST" action="{{ url_for('register') }}" id="register-form">
                     <div class="form-group">
-                        <label for="login-username">Username or Email</label>
+                        <label for="reg-username">Username</label>
                         <div class="input-wrap">
                             <i data-lucide="user" class="input-icon"></i>
-                            <input type="text" class="form-input" id="login-username" name="username"
-                                placeholder="Enter username or email" autocomplete="username" required
+                            <input type="text" class="form-input" id="reg-username" name="username"
+                                placeholder="Choose a unique username" autocomplete="username" required
                                 value="{{ request.form.get('username', '') }}">
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="login-password">Password</label>
+                        <label for="reg-email">Email Address</label>
+                        <div class="input-wrap">
+                            <i data-lucide="mail" class="input-icon"></i>
+                            <input type="email" class="form-input" id="reg-email" name="email"
+                                placeholder="name@company.com" autocomplete="email" required
+                                value="{{ request.form.get('email', '') }}">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg-password">Password</label>
                         <div class="input-wrap">
                             <i data-lucide="lock" class="input-icon"></i>
-                            <input type="password" class="form-input" id="login-password" name="password"
-                                placeholder="Enter your password" autocomplete="current-password" required>
+                            <input type="password" class="form-input" id="reg-password" name="password"
+                                placeholder="Minimum 6 characters" autocomplete="new-password" required>
                             <button type="button" class="pw-toggle" id="pw-toggle-btn"
                                 aria-label="Show / hide password">
                                 <i data-lucide="eye" id="pw-eye-icon"></i>
@@ -764,9 +744,25 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-submit" id="btn-sign-in">
-                        <i data-lucide="log-in"></i>
-                        Sign In to Suite
+                    <div class="form-group">
+                        <label for="reg-role">Account Role</label>
+                        <div class="input-wrap">
+                            <i data-lucide="shield" class="input-icon"></i>
+                            <select class="form-select" id="reg-role" name="role" required>
+                                <option value="user" {% if request.form.get('role')=='user' or not
+                                    request.form.get('role') %}selected{% endif %}>
+                                    User — Standard Calculator Access
+                                </option>
+                                <option value="admin" {% if request.form.get('role')=='admin' %}selected{% endif %}>
+                                    Administrator — Tool Creation &amp; Management
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="btn-register">
+                        <i data-lucide="user-plus"></i>
+                        Create Account
                     </button>
                 </form>
 
@@ -774,7 +770,7 @@
                     <span>or</span>
                 </div>
 
-                <a href="{{ url_for('login_google') }}" class="btn-google" id="btn-google-login">
+                <a href="{{ url_for('login_google') }}" class="btn-google" id="btn-google-register">
                     <svg class="google-icon-svg" viewBox="0 0 48 48">
                         <path fill="#EA4335"
                             d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
@@ -789,14 +785,13 @@
                 </a>
 
                 <div class="auth-switch">
-                    Don't have an account? <a href="{{ url_for('register') }}" id="link-to-register">Create Account</a>
+                    Already have an account? <a href="{{ url_for('login') }}" id="link-to-login">Sign In</a>
                 </div>
 
                 <div class="form-footer">
                     &copy; 2024 Atlas Copco Group &nbsp;·&nbsp; All rights reserved<br>
                     Internal Secure Platform
                 </div>
-
             </div>
 
         </div>
@@ -819,7 +814,7 @@
 
         // Password visibility toggle
         const pwToggle = document.getElementById('pw-toggle-btn');
-        const pwInput = document.getElementById('login-password');
+        const pwInput = document.getElementById('reg-password');
         const pwEye = document.getElementById('pw-eye-icon');
         if (pwToggle) {
             pwToggle.addEventListener('click', () => {

@@ -137,7 +137,7 @@
                 {% for img in ref_images %}
                 <div class="ref-img-card" onclick="openLightbox('{{ loop.index0 }}')">
                     <div class="ref-img-wrap">
-                        <img src="{{ url_for('static', filename='uploads/' ~ img.filename) }}"
+                        <img src="{{ img | img_url }}"
                             alt="{{ img.caption or 'Reference image ' ~ loop.index }}" class="ref-img" loading="lazy">
                         <div class="ref-img-overlay">
                             <i data-lucide="zoom-in"></i>
@@ -179,8 +179,8 @@
             const REF_IMAGES = [
                 {% for img in ref_images %}
             {
-                src: "{{ url_for('static', filename='uploads/' ~ img.filename) }}",
-                    caption: "{{ img.caption | replace('"', '\\"') }}"
+                src: "{{ img | img_url }}",
+                caption: "{{ img.caption | replace('"', '\\"') }}"
             } {% if not loop.last %}, {% endif %}
             {% endfor %}
             ];

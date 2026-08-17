@@ -547,7 +547,7 @@
         <div class="existing-images-grid">
             {% for img in existing %}
             <div class="existing-img-card">
-                <img src="{{ url_for('static', filename='uploads/' ~ img.filename) }}"
+                <img src="{{ img | img_url }}"
                     alt="{{ img.caption or 'Reference image' }}" class="existing-img-thumb">
                 <div class="existing-img-info">
                     <span class="existing-img-caption">
