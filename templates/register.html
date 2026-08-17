@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,36 +9,47 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         /* ── Variables (mirrors base.css exactly) ── */
         :root {
-            --ac-teal:       #004b50;
-            --ac-teal-dark:  #003840;
-            --ac-teal-mid:   #206b6b;
-            --ac-gold:       #b8972a;
-            --ac-gold-dark:  #9a7c22;
-            --bg-page:       #f5f2ed;
-            --bg-white:      #ffffff;
-            --bg-card:       #dce8e8;
-            --text-dark:     #1c1c1c;
-            --text-body:     #444444;
-            --text-muted:    #666666;
-            --border:        #d0d8d8;
-            --border-light:  #e8ecec;
-            --font-heading:  'Lora', Georgia, serif;
-            --font-body:     'Source Sans 3', 'Arial', sans-serif;
-            --radius-none:   0px;
-            --radius-sm:     2px;
-            --shadow-card:   0 1px 4px rgba(0,0,0,0.08);
-            --shadow-lifted: 0 4px 16px rgba(0,0,0,0.1);
+            --ac-teal: #004b50;
+            --ac-teal-dark: #003840;
+            --ac-teal-mid: #206b6b;
+            --ac-gold: #b8972a;
+            --ac-gold-dark: #9a7c22;
+            --bg-page: #f5f2ed;
+            --bg-white: #ffffff;
+            --bg-card: #dce8e8;
+            --text-dark: #1c1c1c;
+            --text-body: #444444;
+            --text-muted: #666666;
+            --border: #d0d8d8;
+            --border-light: #e8ecec;
+            --font-heading: 'Lora', Georgia, serif;
+            --font-body: 'Source Sans 3', 'Arial', sans-serif;
+            --radius-none: 0px;
+            --radius-sm: 2px;
+            --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
+            --shadow-lifted: 0 4px 16px rgba(0, 0, 0, 0.1);
         }
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-        html { scroll-behavior: smooth; font-size: 16px; }
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
 
         body {
             font-family: var(--font-body);
@@ -50,12 +62,16 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        a { color: inherit; text-decoration: none; transition: color 0.2s; }
+        a {
+            color: inherit;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
 
         /* ── Top Utility Bar ── */
         .topbar {
             background: #002b30;
-            color: rgba(255,255,255,0.65);
+            color: rgba(255, 255, 255, 0.65);
             font-size: 0.78rem;
             font-family: var(--font-body);
             padding: 0.4rem 2rem;
@@ -64,7 +80,7 @@
             justify-content: flex-end;
             gap: 1.75rem;
             letter-spacing: 0.02em;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         /* ── Navbar ── */
@@ -104,7 +120,7 @@
             font-family: var(--font-body);
             font-weight: 300;
             font-size: 0.85rem;
-            color: rgba(255,255,255,0.8);
+            color: rgba(255, 255, 255, 0.8);
             letter-spacing: 0.02em;
         }
 
@@ -158,7 +174,7 @@
             right: -60px;
             width: 260px;
             height: 260px;
-            background: rgba(255,255,255,0.03);
+            background: rgba(255, 255, 255, 0.03);
             transform: rotate(30deg);
             pointer-events: none;
         }
@@ -181,7 +197,7 @@
             font-family: var(--font-body);
             font-weight: 300;
             font-size: 0.88rem;
-            color: rgba(255,255,255,0.6);
+            color: rgba(255, 255, 255, 0.6);
         }
 
         .brand-panel h2 {
@@ -199,7 +215,7 @@
 
         .brand-panel-desc {
             font-size: 0.9rem;
-            color: rgba(255,255,255,0.65);
+            color: rgba(255, 255, 255, 0.65);
             line-height: 1.7;
         }
 
@@ -216,25 +232,37 @@
             align-items: flex-start;
             gap: 14px;
             padding: 14px 18px;
-            background: rgba(255,255,255,0.06);
+            background: rgba(255, 255, 255, 0.06);
             border-left: 3px solid transparent;
         }
 
-        .role-item.admin { border-left-color: var(--ac-gold); }
-        .role-item.user  { border-left-color: rgba(255,255,255,0.4); }
+        .role-item.admin {
+            border-left-color: var(--ac-gold);
+        }
+
+        .role-item.user {
+            border-left-color: rgba(255, 255, 255, 0.4);
+        }
 
         .role-icon-box {
             width: 36px;
             height: 36px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
         }
 
-        .role-icon-box i { width: 16px; height: 16px; color: rgba(255,255,255,0.85); }
-        .role-item.admin .role-icon-box i { color: var(--ac-gold); }
+        .role-icon-box i {
+            width: 16px;
+            height: 16px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .role-item.admin .role-icon-box i {
+            color: var(--ac-gold);
+        }
 
         .role-text h4 {
             font-family: var(--font-body);
@@ -242,13 +270,13 @@
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            color: rgba(255,255,255,0.9);
+            color: rgba(255, 255, 255, 0.9);
             margin-bottom: 3px;
         }
 
         .role-text p {
             font-size: 0.82rem;
-            color: rgba(255,255,255,0.55);
+            color: rgba(255, 255, 255, 0.55);
             line-height: 1.4;
         }
 
@@ -311,7 +339,11 @@
             margin-bottom: 1.25rem;
         }
 
-        .error-banner i { width: 16px; height: 16px; flex-shrink: 0; }
+        .error-banner i {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
 
         .flash-banner {
             background: #eaf4ec;
@@ -356,7 +388,8 @@
             pointer-events: none;
         }
 
-        .form-input, .form-select {
+        .form-input,
+        .form-select {
             width: 100%;
             padding: 0.72rem 0.875rem 0.72rem 2.4rem;
             font-family: var(--font-body);
@@ -377,13 +410,16 @@
             cursor: pointer;
         }
 
-        .form-input:focus, .form-select:focus {
+        .form-input:focus,
+        .form-select:focus {
             border-color: var(--ac-teal);
             background: #ffffff;
             box-shadow: inset 0 0 0 1px var(--ac-teal);
         }
 
-        .form-input::placeholder { color: #aaa; }
+        .form-input::placeholder {
+            color: #aaa;
+        }
 
         /* Password toggle */
         .pw-toggle {
@@ -400,8 +436,14 @@
             padding: 0;
         }
 
-        .pw-toggle i { width: 16px; height: 16px; }
-        .pw-toggle:hover { color: var(--ac-teal); }
+        .pw-toggle i {
+            width: 16px;
+            height: 16px;
+        }
+
+        .pw-toggle:hover {
+            color: var(--ac-teal);
+        }
 
         /* Submit button */
         .btn-submit {
@@ -425,8 +467,14 @@
             margin-top: 0.5rem;
         }
 
-        .btn-submit:hover { background: var(--ac-teal-dark); }
-        .btn-submit i { width: 16px; height: 16px; }
+        .btn-submit:hover {
+            background: var(--ac-teal-dark);
+        }
+
+        .btn-submit i {
+            width: 16px;
+            height: 16px;
+        }
 
         /* Divider */
         .auth-divider {
@@ -470,13 +518,13 @@
             gap: 0.75rem;
             transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
             text-decoration: none;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
         }
 
         .btn-google:hover {
             background: #f8fafb;
             border-color: var(--ac-teal);
-            box-shadow: 0 2px 6px rgba(0,75,80,0.12);
+            box-shadow: 0 2px 6px rgba(0, 75, 80, 0.12);
             color: var(--ac-teal-dark);
         }
 
@@ -530,7 +578,7 @@
         }
 
         .page-footer-copy {
-            color: rgba(255,255,255,0.38);
+            color: rgba(255, 255, 255, 0.38);
             font-size: 0.8rem;
         }
 
@@ -540,22 +588,39 @@
         }
 
         .page-footer-links a {
-            color: rgba(255,255,255,0.38);
+            color: rgba(255, 255, 255, 0.38);
             font-size: 0.8rem;
             transition: color 0.2s;
         }
 
-        .page-footer-links a:hover { color: rgba(255,255,255,0.7); }
+        .page-footer-links a:hover {
+            color: rgba(255, 255, 255, 0.7);
+        }
 
         /* Responsive */
         @media (max-width: 760px) {
-            .register-wrapper { grid-template-columns: 1fr; max-width: 460px; }
-            .brand-panel { display: none; }
-            .register-form-panel { padding: 2.5rem 1.75rem; }
-            .page-footer-inner { flex-direction: column; gap: 0.5rem; text-align: center; }
+            .register-wrapper {
+                grid-template-columns: 1fr;
+                max-width: 460px;
+            }
+
+            .brand-panel {
+                display: none;
+            }
+
+            .register-form-panel {
+                padding: 2.5rem 1.75rem;
+            }
+
+            .page-footer-inner {
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <!-- ── Top Bar ── -->
@@ -577,14 +642,15 @@
     <!-- ── Flash messages ── -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        {% for category, message in messages %}
-        <div style="max-width:1040px;margin:1.25rem auto;padding:0 1.5rem;">
-            <div class="flash-banner flash-{{ category }}">
-                <i data-lucide="{% if category == 'warning' %}alert-triangle{% elif category == 'error' %}x-circle{% elif category == 'success' %}check-circle{% else %}info{% endif %}"></i>
-                {{ message }}
-            </div>
+    {% for category, message in messages %}
+    <div style="max-width:1040px;margin:1.25rem auto;padding:0 1.5rem;">
+        <div class="flash-banner flash-{{ category }}">
+            <i
+                data-lucide="{% if category == 'warning' %}alert-triangle{% elif category == 'error' %}x-circle{% elif category == 'success' %}check-circle{% else %}info{% endif %}"></i>
+            {{ message }}
         </div>
-        {% endfor %}
+    </div>
+    {% endfor %}
     {% endif %}
     {% endwith %}
 
@@ -649,16 +715,9 @@
                         <label for="reg-username">Username</label>
                         <div class="input-wrap">
                             <i data-lucide="user" class="input-icon"></i>
-                            <input
-                                type="text"
-                                class="form-input"
-                                id="reg-username"
-                                name="username"
-                                placeholder="Choose a unique username"
-                                autocomplete="username"
-                                required
-                                value="{{ request.form.get('username', '') }}"
-                            >
+                            <input type="text" class="form-input" id="reg-username" name="username"
+                                placeholder="Choose a unique username" autocomplete="username" required
+                                value="{{ request.form.get('username', '') }}">
                         </div>
                     </div>
 
@@ -666,16 +725,9 @@
                         <label for="reg-email">Email Address</label>
                         <div class="input-wrap">
                             <i data-lucide="mail" class="input-icon"></i>
-                            <input
-                                type="email"
-                                class="form-input"
-                                id="reg-email"
-                                name="email"
-                                placeholder="name@company.com"
-                                autocomplete="email"
-                                required
-                                value="{{ request.form.get('email', '') }}"
-                            >
+                            <input type="email" class="form-input" id="reg-email" name="email"
+                                placeholder="name@company.com" autocomplete="email" required
+                                value="{{ request.form.get('email', '') }}">
                         </div>
                     </div>
 
@@ -683,16 +735,10 @@
                         <label for="reg-password">Password</label>
                         <div class="input-wrap">
                             <i data-lucide="lock" class="input-icon"></i>
-                            <input
-                                type="password"
-                                class="form-input"
-                                id="reg-password"
-                                name="password"
-                                placeholder="Minimum 6 characters"
-                                autocomplete="new-password"
-                                required
-                            >
-                            <button type="button" class="pw-toggle" id="pw-toggle-btn" aria-label="Show / hide password">
+                            <input type="password" class="form-input" id="reg-password" name="password"
+                                placeholder="Minimum 6 characters" autocomplete="new-password" required>
+                            <button type="button" class="pw-toggle" id="pw-toggle-btn"
+                                aria-label="Show / hide password">
                                 <i data-lucide="eye" id="pw-eye-icon"></i>
                             </button>
                         </div>
@@ -703,10 +749,11 @@
                         <div class="input-wrap">
                             <i data-lucide="shield" class="input-icon"></i>
                             <select class="form-select" id="reg-role" name="role" required>
-                                <option value="user" {% if request.form.get('role') == 'user' or not request.form.get('role') %}selected{% endif %}>
+                                <option value="user" {% if request.form.get('role')=='user' or not
+                                    request.form.get('role') %}selected{% endif %}>
                                     User — Standard Calculator Access
                                 </option>
-                                <option value="admin" {% if request.form.get('role') == 'admin' %}selected{% endif %}>
+                                <option value="admin" {% if request.form.get('role')=='admin' %}selected{% endif %}>
                                     Administrator — Tool Creation &amp; Management
                                 </option>
                             </select>
@@ -725,10 +772,14 @@
 
                 <a href="{{ url_for('login_google') }}" class="btn-google" id="btn-google-register">
                     <svg class="google-icon-svg" viewBox="0 0 48 48">
-                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                        <path fill="#EA4335"
+                            d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                        <path fill="#4285F4"
+                            d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                        <path fill="#FBBC05"
+                            d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                        <path fill="#34A853"
+                            d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
                     </svg>
                     Sign in with Google
                 </a>
@@ -763,16 +814,17 @@
 
         // Password visibility toggle
         const pwToggle = document.getElementById('pw-toggle-btn');
-        const pwInput  = document.getElementById('reg-password');
-        const pwEye    = document.getElementById('pw-eye-icon');
+        const pwInput = document.getElementById('reg-password');
+        const pwEye = document.getElementById('pw-eye-icon');
         if (pwToggle) {
             pwToggle.addEventListener('click', () => {
                 const isHidden = pwInput.type === 'password';
-                pwInput.type   = isHidden ? 'text' : 'password';
+                pwInput.type = isHidden ? 'text' : 'password';
                 pwEye.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
                 lucide.createIcons();
             });
         }
     </script>
 </body>
+
 </html>
